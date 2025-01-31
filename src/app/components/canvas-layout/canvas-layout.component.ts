@@ -26,6 +26,7 @@ export class CanvasLayoutComponent {
     this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
     this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
     this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+    this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
   }
 
   onFileSelected(event: Event) {
@@ -68,8 +69,7 @@ export class CanvasLayoutComponent {
   onMouseMove(event: MouseEvent) {
     const mouseX = event.offsetX;
     const mouseY = event.offsetY;
-
-    this.itemManager.moveSelectedItem(mouseX, mouseY);
+    this.itemManager.moveSelectedItem(mouseX, mouseY, this.canvas.width, this.canvas.height);
     this.drawCanvas();
   }
 

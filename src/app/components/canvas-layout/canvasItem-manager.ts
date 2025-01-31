@@ -30,9 +30,18 @@ export class CanvasItemManager {
         return null;
     }
 
-    moveSelectedItem(mouseX: number, mouseY: number): void {
+    moveSelectedItem(mouseX: number, mouseY: number, canvasWidth: number, canvasHeight: number): void {
         if (this.selectedCanvasItem) {
-            this.selectedCanvasItem.x = mouseX - this.selectedItemStartX;
+            if (0 <= this.selectedCanvasItem.x && (canvasWidth >= (this.selectedCanvasItem.x + this.selectedCanvasItem.image.width))) {
+                if ((mouseX - this.selectedItemStartX) > 0 && (mouseX - this.selectedItemStartX) < (canvasWidth - this.selectedCanvasItem.image.width)) {
+                    this.selectedCanvasItem.x = mouseX - this.selectedItemStartX;
+                }else if((mouseX - this.selectedItemStartX) > (canvasWidth - this.selectedCanvasItem.image.width)){
+                    this.selectedCanvasItem.x = canvasWidth - this.selectedCanvasItem.image.width - 1;
+                }
+                else {
+                    this.selectedCanvasItem.x = 0
+                }
+            }
             this.selectedCanvasItem.y = mouseY - this.selectedItemStartY;
         }
     }
