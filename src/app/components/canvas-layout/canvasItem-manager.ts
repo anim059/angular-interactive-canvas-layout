@@ -21,6 +21,8 @@ export class CanvasItemManager {
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
             if (item.conatain(mouseX, mouseY)) {
+                item.isSelected = true;
+                item.isDragging = true;
                 this.selectedItemStartX = mouseX - item.x;
                 this.selectedItemStartY = mouseY - item.y;
                 this.selectedItemPrevX = item.x;
@@ -34,38 +36,43 @@ export class CanvasItemManager {
         return null;
     }
 
-    moveSelectedItem(mouseX: number, mouseY: number, canvasWidth: number, canvasHeight: number): void {
-        if (this.selectedCanvasItem) {
-            if (0 <= this.selectedCanvasItem.x && (canvasWidth >= (this.selectedCanvasItem.x + this.selectedCanvasItem.image.width))) {
-                if ((mouseX - this.selectedItemStartX) > 0 && (mouseX - this.selectedItemStartX) < (canvasWidth - this.selectedCanvasItem.image.width)) {
+    moveSelectedItem(mouseX: number, mouseY: number, canvas: HTMLCanvasElement): void {
+        if (this.selectedCanvasItem?.isDragging) {
+            if (0 <= this.selectedCanvasItem.x && (canvas.width >= (this.selectedCanvasItem.x + this.selectedCanvasItem.image.width))) {
+                if ((mouseX - this.selectedItemStartX) > 0 && (mouseX - this.selectedItemStartX) < (canvas.width - this.selectedCanvasItem.image.width)) {
                     this.selectedCanvasItem.x = mouseX - this.selectedItemStartX;
-                } else if ((mouseX - this.selectedItemStartX) >= (canvasWidth - this.selectedCanvasItem.image.width)) {
-                    this.selectedCanvasItem.x = canvasWidth - this.selectedCanvasItem.image.width - 1;
+                } else if ((mouseX - this.selectedItemStartX) >= (canvas.width - this.selectedCanvasItem.image.width)) {
+                    this.selectedCanvasItem.x = canvas.width - this.selectedCanvasItem.image.width - 1;
                 }
                 else {
                     this.selectedCanvasItem.x = 0
                 }
             }
-            if (0 <= this.selectedCanvasItem.y && (canvasHeight >= (this.selectedCanvasItem.y + this.selectedCanvasItem.image.height))) {
-                if ((mouseY - this.selectedItemStartY) > 0 && (mouseY - this.selectedItemStartY) < (canvasHeight - this.selectedCanvasItem.image.height)) {
+            if (0 <= this.selectedCanvasItem.y && (canvas.height >= (this.selectedCanvasItem.y + this.selectedCanvasItem.image.height))) {
+                if ((mouseY - this.selectedItemStartY) > 0 && (mouseY - this.selectedItemStartY) < (canvas.height - this.selectedCanvasItem.image.height)) {
                     this.selectedCanvasItem.y = mouseY - this.selectedItemStartY;
-                } else if ((mouseY - this.selectedItemStartY) >= (canvasHeight - this.selectedCanvasItem.image.height)) {
-                    this.selectedCanvasItem.y = canvasHeight - this.selectedCanvasItem.image.height - 1;
+                } else if ((mouseY - this.selectedItemStartY) >= (canvas.height - this.selectedCanvasItem.image.height)) {
+                    this.selectedCanvasItem.y = canvas.height - this.selectedCanvasItem.image.height - 1;
                 }
                 else {
                     this.selectedCanvasItem.y = 0
                 }
             }
-            if (this.selectedItemPrevX && this.selectedItemPrevY) {
-                for (const item of this.items) {
-                    if (item !== this.selectedCanvasItem && this.selectedCanvasItem?.isOverLapping(item)) {
-                        this.selectedCanvasItem.hasCollision = true;
-                        break;
-                    }else{
-                        this.selectedCanvasItem.hasCollision = false;
-                    }
-                };
-            }
+        }
+        if (this.isCursorOverCloseIcon(mouseX, mouseY) || this.isCursorOverRotateIcon(mouseX, mouseY)) {
+            canvas.style.cursor = 'pointer';
+        } else {
+            canvas.style.cursor = 'move';
+        }
+        if (this.selectedCanvasItem &&this.selectedItemPrevX && this.selectedItemPrevY) {
+            for (const item of this.items) {
+                if (item !== this.selectedCanvasItem && this.selectedCanvasItem?.isOverLapping(item)) {
+                    this.selectedCanvasItem.hasCollision = true;
+                    break;
+                }else{
+                    this.selectedCanvasItem.hasCollision = false;
+                }
+            };
         }
     }
 
@@ -77,13 +84,60 @@ export class CanvasItemManager {
                 this.selectedCanvasItem.hasCollision = false;
             }
             this.selectedCanvasItem.isDragging = false;
-            this.selectedCanvasItem = null;
             this.selectedItemStartX = 0;
             this.selectedItemStartY = 0;
         }
     }
 
+    deselectAllItems(mouseX: number, mouseY: number, ctx: CanvasRenderingContext2D): void {
+        if (this.selectedCanvasItem && this.isCursorOverCloseIcon(mouseX, mouseY)) {
+            this.items.splice(this.items.indexOf(this.selectedCanvasItem), 1);
+        }
+        // if (this.selectedCanvasItem) {
+        //     const targetAngle = (this.selectedCanvasItem.rotateAngle + 45) % 360;
+        //     const animate = () => {
+        //         if (this.selectedCanvasItem && Math.abs(this.selectedCanvasItem.rotateAngle - targetAngle) > 1) {
+        //             this.selectedCanvasItem.rotateAngle +=
+        //                 45 > 0 ? 1 : -1; // Increment towards the target angle
+        //             this.drawAll(ctx);
+        //             requestAnimationFrame(animate);
+        //         } else {
+        //             if (this.selectedCanvasItem) {
+        //                 this.selectedCanvasItem.rotateAngle = targetAngle; // Snap to the target angle
+        //                 this.drawAll(ctx);
+        //             }
+        //         }
+        //     };
+        //     animate();
+        // }
+        if (this.selectedCanvasItem && this.isCursorOverRotateIcon(mouseX, mouseY)) {
+            this.selectedCanvasItem.rotate(45);
+            this.drawAll(ctx);
+            return;
+        }
+        this.selectedCanvasItem = null;
+        this.items.forEach(item => {
+            item.isSelected = false;
+            item.isDragging = false;
+        });
+    }
+
+    isCursorOverCloseIcon(mouseX: number, mouseY: number): boolean {
+        return (this.selectedCanvasItem?.isSelected && this.selectedCanvasItem.isCloseIconClicked(mouseX, mouseY)) as boolean;
+    }
+
+    isCursorOverRotateIcon(mouseX: number, mouseY: number): boolean {
+        return (this.selectedCanvasItem?.isSelected && this.selectedCanvasItem.isRotateIconClicked(mouseX, mouseY)) as boolean;
+    }
+
     drawAll(ctx: CanvasRenderingContext2D): void {
-        this.items.forEach(item => item.drawItem(ctx));
+        this.items.forEach(item => {
+            item.drawItem(ctx);
+            ctx.setLineDash([]);
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        });
     }
 }
