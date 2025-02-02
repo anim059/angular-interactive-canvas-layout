@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, PLATFORM_ID, ViewChild } from '@angular/core';
 
 import { CanvasItem } from './canvasItem';
 import { CanvasItemManager } from './canvasItem-manager';
@@ -11,8 +11,7 @@ import { CanvasItemManager } from './canvasItem-manager';
   styleUrl: './canvas-layout.component.css'
 })
 export class CanvasLayoutComponent {
-
-  @ViewChild('imageCanvas') private canvasRef!: ElementRef;
+ @ViewChild('imageCanvas') private canvasRef!: ElementRef;
 
   private canvas!: HTMLCanvasElement;
 
@@ -20,13 +19,18 @@ export class CanvasLayoutComponent {
 
   private itemManager = new CanvasItemManager();
 
+  plateformId = inject(PLATFORM_ID);
+
+
   ngAfterViewInit() {
-    this.canvas = this.canvasRef.nativeElement;
-    this.ctx = this.canvas.getContext('2d')!;
-    this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-    this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-    this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-    this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
+    if (isPlatformBrowser(this.plateformId)) {
+      this.canvas = this.canvasRef.nativeElement;
+      this.ctx = this.canvas.getContext('2d')!;
+      this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+      this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+      this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+      this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
+    }
   }
 
   onFileSelected(event: Event) {
@@ -41,8 +45,8 @@ export class CanvasLayoutComponent {
 
         img.onload = () => {
           let image = img;
-          image.width = 150;
-          image.height = 150;
+          image.width = 120;
+          image.height = 120;
           this.itemManager.addItem(img, this.canvas.width / 2 - img.width / 2, this.canvas.height / 2 - img.height / 2);
         };
       };
@@ -59,21 +63,24 @@ export class CanvasLayoutComponent {
   onMouseDown(event: MouseEvent) {
     const mouseX = event.offsetX;
     const mouseY = event.offsetY;
+    this.itemManager.deselectAllItems(mouseX, mouseY, this.ctx);
     const selectedItem = this.itemManager.selectedItem(mouseX, mouseY);
-    if(selectedItem){
-      selectedItem.isDragging = true;
-      this.drawCanvas();
-    }
+    // if (selectedItem) {
+    //   selectedItem.isDragging = true;
+    // }
+    this.drawCanvas();
   }
 
   onMouseMove(event: MouseEvent) {
+    this.canvas.style.cursor = 'move';
     const mouseX = event.offsetX;
     const mouseY = event.offsetY;
-    this.itemManager.moveSelectedItem(mouseX, mouseY, this.canvas.width, this.canvas.height);
+    this.itemManager.moveSelectedItem(mouseX, mouseY, this.canvas);
     this.drawCanvas();
   }
 
   onMouseUp() {
     this.itemManager.deselectItem();
   }
+
 }
