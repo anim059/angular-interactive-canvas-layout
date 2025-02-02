@@ -1,7 +1,8 @@
-import { Component, ElementRef, inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, ElementRef, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 
 import { CanvasItem } from './canvasItem';
 import { CanvasItemManager } from './canvasItem-manager';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'canvas-layout',
@@ -48,6 +49,7 @@ export class CanvasLayoutComponent {
           image.width = 120;
           image.height = 120;
           this.itemManager.addItem(img, this.canvas.width / 2 - img.width / 2, this.canvas.height / 2 - img.height / 2);
+          this.drawCanvas();
         };
       };
 

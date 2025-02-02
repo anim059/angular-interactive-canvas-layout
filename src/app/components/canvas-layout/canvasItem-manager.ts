@@ -64,12 +64,27 @@ export class CanvasItemManager {
         } else {
             canvas.style.cursor = 'move';
         }
-        if (this.selectedCanvasItem &&this.selectedItemPrevX && this.selectedItemPrevY) {
+        if (this.selectedCanvasItem && this.selectedItemPrevX && this.selectedItemPrevY) {
             for (const item of this.items) {
-                if (item !== this.selectedCanvasItem && this.selectedCanvasItem?.isOverLapping(item)) {
-                    this.selectedCanvasItem.hasCollision = true;
-                    break;
-                }else{
+                if (item !== this.selectedCanvasItem) {
+                    if (this.selectedCanvasItem.isCollidingLeft(item) && this.selectedCanvasItem.isDragging) {
+                        console.log('Colliding with the left side of item');
+                        this.selectedCanvasItem.hasCollision = true;
+                        break;
+                    } else if (this.selectedCanvasItem.isCollidingRight(item) && this.selectedCanvasItem.isDragging) {
+                        console.log('Colliding with the right side of item');
+                        this.selectedCanvasItem.hasCollision = true;
+                        break;
+                    } else if (this.selectedCanvasItem.isCollidingTop(item) && this.selectedCanvasItem.isDragging) {
+                        console.log('Colliding with the top side of item');
+                        this.selectedCanvasItem.hasCollision = true;
+                        break;
+                    } else if (this.selectedCanvasItem.isCollidingBottom(item) && this.selectedCanvasItem.isDragging) {
+                        console.log('Colliding with the bottom side of item');
+                        this.selectedCanvasItem.hasCollision = true;
+                        break;
+                    }
+                } else {
                     this.selectedCanvasItem.hasCollision = false;
                 }
             };

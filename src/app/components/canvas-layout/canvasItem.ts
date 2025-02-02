@@ -100,18 +100,45 @@ export class CanvasItem {
     }
 
     rotate(degrees: number): void {
-        this.rotateAngle += degrees; // Increment the rotation angle
-        this.rotateAngle %= 360; // Keep the angle within 0-360 degrees
+        this.rotateAngle += degrees; 
+        this.rotateAngle %= 360; 
     }
 
-    isOverLapping(secondItem: CanvasItem) {
-        return !(
-            this.x + this.image.width <= secondItem.x ||
-            secondItem.x + secondItem.image.width <= this.x ||
-            this.y + this.image.height <= secondItem.y ||
-            secondItem.y + secondItem.image.height <= this.y
-        )
+    isCollidingTop(secondItem: CanvasItem): boolean {
+        return (
+            this.y < secondItem.y + secondItem.image.height && 
+            this.y >= secondItem.y + secondItem.image.height - 5 &&
+            this.x + this.image.width > secondItem.x && 
+            this.x < secondItem.x + secondItem.image.width
+        );
+    }
+
+    isCollidingBottom(secondItem: CanvasItem): boolean {
+        return (
+            this.y + this.image.height > secondItem.y && 
+            this.y + this.image.height <= secondItem.y + 5 && 
+            this.x + this.image.width > secondItem.x && 
+            this.x < secondItem.x + secondItem.image.width 
+        );
     }
 
 
+    isCollidingLeft(secondItem: CanvasItem): boolean {
+        return (
+            this.x < secondItem.x + secondItem.image.width &&
+            this.x >= secondItem.x + secondItem.image.width - 5 && 
+            this.y + this.image.height > secondItem.y && 
+            this.y < secondItem.y + secondItem.image.height
+        );
+    }
+
+
+    isCollidingRight(secondItem: CanvasItem): boolean {
+        return (
+            this.x + this.image.width > secondItem.x &&
+            this.x + this.image.width <= secondItem.x + 5 &&
+            this.y + this.image.height > secondItem.y &&
+            this.y < secondItem.y + secondItem.image.height
+        );
+    }
 }
