@@ -1,15 +1,15 @@
 import { CanvasItem } from "./canvasItem";
 
 export class CanvasItemManager {
-    private items: CanvasItem[] = [];
+     private items: CanvasItem[] = [];
     private selectedCanvasItem: CanvasItem | null = null;
     selectedItemStartX !: number;
     selectedItemStartY !: number;
     selectedItemPrevX !: number;
     selectedItemPrevY !: number;
 
-    addItem(image: HTMLImageElement, x: number, y: number): void {
-        const newItem = new CanvasItem(image, x, y, false);
+    addItem(image: HTMLImageElement, x: number, y: number, connectionSide: string = '', connectedItems: { id: number }[] = []): void {
+        const newItem = new CanvasItem(image, x, y, false, connectionSide, connectedItems);
         this.items.push(newItem);
     }
 
@@ -66,23 +66,16 @@ export class CanvasItemManager {
         }
         if (this.selectedCanvasItem && this.selectedItemPrevX && this.selectedItemPrevY) {
             for (const item of this.items) {
-                if (item !== this.selectedCanvasItem) {
-                    if (this.selectedCanvasItem.isCollidingLeft(item) && this.selectedCanvasItem.isDragging) {
-                        console.log('Colliding with the left side of item');
+                if (item !== this.selectedCanvasItem && this.selectedCanvasItem.isDragging) {
+                    if (this.selectedCanvasItem?.isOverLapping(item)) {
                         this.selectedCanvasItem.hasCollision = true;
                         break;
-                    } else if (this.selectedCanvasItem.isCollidingRight(item) && this.selectedCanvasItem.isDragging) {
-                        console.log('Colliding with the right side of item');
-                        this.selectedCanvasItem.hasCollision = true;
-                        break;
-                    } else if (this.selectedCanvasItem.isCollidingTop(item) && this.selectedCanvasItem.isDragging) {
-                        console.log('Colliding with the top side of item');
-                        this.selectedCanvasItem.hasCollision = true;
-                        break;
-                    } else if (this.selectedCanvasItem.isCollidingBottom(item) && this.selectedCanvasItem.isDragging) {
-                        console.log('Colliding with the bottom side of item');
-                        this.selectedCanvasItem.hasCollision = true;
-                        break;
+                    }
+                    if (this.selectedCanvasItem?.isItemExtraBoxOverLapping(item)) {
+                        item.setMatchConnectionInfo(true, this.selectedCanvasItem.connectionSide);
+                        console.log('extra');
+                    } else {
+                        item.setMatchConnectionInfo(false, this.selectedCanvasItem.connectionSide);
                     }
                 } else {
                     this.selectedCanvasItem.hasCollision = false;
@@ -126,7 +119,7 @@ export class CanvasItemManager {
         //     animate();
         // }
         if (this.selectedCanvasItem && this.isCursorOverRotateIcon(mouseX, mouseY)) {
-            this.selectedCanvasItem.rotate(45);
+            this.selectedCanvasItem.rotate(90);
             this.drawAll(ctx);
             return;
         }
@@ -134,6 +127,7 @@ export class CanvasItemManager {
         this.items.forEach(item => {
             item.isSelected = false;
             item.isDragging = false;
+            item.isConnectionConditionMatched = false;
         });
     }
 
