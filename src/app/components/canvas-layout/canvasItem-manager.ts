@@ -66,19 +66,23 @@ export class CanvasItemManager {
         }
         if (this.selectedCanvasItem && this.selectedItemPrevX && this.selectedItemPrevY) {
             for (const item of this.items) {
-                if (item !== this.selectedCanvasItem && this.selectedCanvasItem.isDragging) {
-                    if (this.selectedCanvasItem?.isOverLapping(item)) {
+                if (item !== this.selectedCanvasItem) {
+                    if (this.selectedCanvasItem?.isOverLapping(item) && this.selectedCanvasItem.isDragging) {
                         this.selectedCanvasItem.hasCollision = true;
                         break;
+                    } else {
+                        this.selectedCanvasItem.hasCollision = false;
                     }
                     if (this.selectedCanvasItem?.isItemExtraBoxOverLapping(item)) {
-                        item.setMatchConnectionInfo(true, this.selectedCanvasItem.connectionSide);
-                        console.log('extra');
+                        if(this.selectedCanvasItem.isDragging){
+                            item.setMatchConnectionInfo(true, this.selectedCanvasItem.connectionSide);
+                        }else{
+                            item.setMatchConnectionInfo(false, this.selectedCanvasItem.connectionSide);
+                            this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width, item.connectionSide);
+                        }
                     } else {
                         item.setMatchConnectionInfo(false, this.selectedCanvasItem.connectionSide);
                     }
-                } else {
-                    this.selectedCanvasItem.hasCollision = false;
                 }
             };
         }
