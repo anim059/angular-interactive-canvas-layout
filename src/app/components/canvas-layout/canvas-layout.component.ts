@@ -22,6 +22,33 @@ export class CanvasLayoutComponent {
 
   plateformId = inject(PLATFORM_ID);
 
+  productList: { url: string, id: number,width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }[] = [
+    {
+      id: 1,
+      url: 'products/Amber-Bouclé-Swivel.png',
+      width: 150,
+      height: 150,
+      connectionSide: 'left',
+      connectedItems: [{ id: 2 }]
+    },
+    {
+      id: 2,
+      width: 150,
+      height: 150,
+      url: 'products/Owen-Armchair.png',
+      connectionSide: 'both',
+      connectedItems: [{ id: 3 }, { id: 1 }]
+    },
+    {
+      id: 3,
+      width: 150,
+      height: 150,
+      url: 'products/Owen-Right.png',
+      connectionSide: 'right',
+      connectedItems: [{ id: 2 }]
+    }
+  ];
+
 
   ngAfterViewInit() {
     if (isPlatformBrowser(this.plateformId)) {
@@ -30,8 +57,20 @@ export class CanvasLayoutComponent {
       this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
       this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
       this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-      this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
+      // this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
     }
+  }
+
+  addProduct(item: { url: string, id: number, width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }) {
+    const img = new Image();
+    img.src = item.url as string;
+    img.onload = () => {
+      let image = img;
+      image.width = item.width;
+      image.height = item.height;
+      this.itemManager.addItem(img, this.canvas.width / 2 - img.width / 2, this.canvas.height / 2 - img.height / 2, item.connectionSide, item.connectedItems);
+      this.drawCanvas();
+    };
   }
 
   onFileSelected(event: Event) {
@@ -49,7 +88,6 @@ export class CanvasLayoutComponent {
           image.width = 120;
           image.height = 120;
           this.itemManager.addItem(img, this.canvas.width / 2 - img.width / 2, this.canvas.height / 2 - img.height / 2);
-          this.drawCanvas();
         };
       };
 
