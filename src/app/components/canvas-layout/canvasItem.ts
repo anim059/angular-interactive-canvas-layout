@@ -1,6 +1,8 @@
 export class CanvasItem {
 
-    image !: HTMLImageElement;
+     image !: HTMLImageElement;
+    width !: number;
+    height !: number;
     x !: number;
     y !: number;
     isDragging !: boolean;
@@ -18,10 +20,17 @@ export class CanvasItem {
     rotateImageIcon !: HTMLImageElement;
     rotateImageSize: number = 30;
 
+    sideBoxWidth !: number;
+    sideBoxHeight !: number;
+    sideBoxPadding !: number;
+
+
     constructor(image: HTMLImageElement, x: number, y: number, isDragging: boolean, connectionSide: string = '', connectedItems: { id: number }[] = []) {
         this.image = image;
         this.x = x;
         this.y = y;
+        this.width = image.width;
+        this.height = image.height;
         this.isDragging = isDragging;
         this.rotateAngle = 0;
         this.isSelected = false;
@@ -31,6 +40,9 @@ export class CanvasItem {
         this.closeImageIcon.src = 'icons/close-black-2.svg';
         this.rotateImageIcon = new Image();
         this.rotateImageIcon.src = 'icons/rotate-left.svg';
+        this.sideBoxWidth = 40;
+        this.sideBoxHeight = (this.height * 30) / 100;
+        this.sideBoxPadding = this.sideBoxWidth;
     }
 
     drawItem(ctx: CanvasRenderingContext2D) {
@@ -45,6 +57,24 @@ export class CanvasItem {
         this.createConnectionArea(ctx);
         ctx.restore();
         this.addBorderOnSelectedItem(ctx);
+    }
+
+    mergeConnectedItems(updatedX: number, updatedY: number, otherItemWidth: number, otherItemConnectionSide: string) {
+        if (this.connectionSide === 'left') {
+            this.x = updatedX + otherItemWidth;
+            this.y = updatedY;
+        } else if (this.connectionSide === 'right') {
+            this.x = updatedX - otherItemWidth;
+            this.y = updatedY;
+        } else if (this.connectionSide === 'both') {
+            if (otherItemConnectionSide === 'left') {
+                this.x = updatedX - otherItemWidth;
+                this.y = updatedY;
+            } else if (otherItemConnectionSide === 'right') {
+                this.x = updatedX + otherItemWidth;
+                this.y = updatedY;
+            }
+        }
     }
 
     setMatchConnectionInfo(isMatch: boolean, shadowSide: string) {
@@ -218,42 +248,6 @@ export class CanvasItem {
             this.y + this.image.height <= secondItem.y ||
             secondItem.y + secondItem.image.height <= this.y
         )
-    }
-
-    isCollidingTop(secondItem: CanvasItem): boolean {
-        return (
-            this.y < secondItem.y + secondItem.image.height &&
-            this.y >= secondItem.y + secondItem.image.height - 5 &&
-            this.x + this.image.width > secondItem.x &&
-            this.x < secondItem.x + secondItem.image.width
-        );
-    }
-
-    isCollidingBottom(secondItem: CanvasItem): boolean {
-        return (
-            this.y + this.image.height > secondItem.y &&
-            this.y + this.image.height <= secondItem.y + 5 &&
-            this.x + this.image.width > secondItem.x &&
-            this.x < secondItem.x + secondItem.image.width
-        );
-    }
-
-    isCollidingLeft(secondItem: CanvasItem): boolean {
-        return (
-            this.x < secondItem.x + secondItem.image.width &&
-            this.x >= secondItem.x + secondItem.image.width - 5 &&
-            this.y + this.image.height > secondItem.y &&
-            this.y < secondItem.y + secondItem.image.height
-        );
-    }
-
-    isCollidingRight(secondItem: CanvasItem): boolean {
-        return (
-            this.x + this.image.width > secondItem.x &&
-            this.x + this.image.width <= secondItem.x + 5 &&
-            this.y + this.image.height > secondItem.y &&
-            this.y < secondItem.y + secondItem.image.height
-        );
     }
 
     isItemExtraBoxOverLapping(secondItem: CanvasItem): boolean {
