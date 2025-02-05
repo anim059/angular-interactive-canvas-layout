@@ -1,7 +1,7 @@
 import { CanvasItem } from "./canvasItem";
 
 export class CanvasItemManager {
-     private items: CanvasItem[] = [];
+    private items: CanvasItem[] = [];
     private selectedCanvasItem: CanvasItem | null = null;
     selectedItemStartX !: number;
     selectedItemStartY !: number;
@@ -74,14 +74,17 @@ export class CanvasItemManager {
                         this.selectedCanvasItem.hasCollision = false;
                     }
                     if (this.selectedCanvasItem?.isItemExtraBoxOverLapping(item)) {
+                        console.log('extra box collision');
                         if(this.selectedCanvasItem.isDragging){
-                            item.setMatchConnectionInfo(true, this.selectedCanvasItem.connectionSide);
+                            item.setMatchConnectionInfo(true, this.selectedCanvasItem,
+                                this.selectedCanvasItem.connectionSide === 'both' ? 'both' : this.selectedCanvasItem.connectionSide === 'left' ? 'right' : 'left');
                         }else{
-                            item.setMatchConnectionInfo(false, this.selectedCanvasItem.connectionSide);
-                            this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width, item.connectionSide);
+                            // item.setMatchConnectionInfo(false, this.selectedCanvasItem,
+                            //     this.selectedCanvasItem.connectionSide === 'both' ? 'both' : this.selectedCanvasItem.connectionSide === 'left' ? 'right' : 'left');
+                            // this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width, item.connectionSide);
                         }
                     } else {
-                        item.setMatchConnectionInfo(false, this.selectedCanvasItem.connectionSide);
+                        item.setMatchConnectionInfo(false, this.selectedCanvasItem, this.selectedCanvasItem.connectionSide);
                     }
                 }
             };
