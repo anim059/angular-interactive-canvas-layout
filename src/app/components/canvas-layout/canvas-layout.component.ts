@@ -26,15 +26,15 @@ export class CanvasLayoutComponent {
     {
       id: 1,
       url: 'products/Amber-Bouclé-Swivel.png',
-      width: 150,
+      width: 200,
       height: 150,
       connectionSide: 'left',
       connectedItems: [{ id: 2 }]
     },
     {
       id: 2,
-      width: 150,
-      height: 150,
+      width: 250,
+      height: 200,
       url: 'products/Owen-Armchair.png',
       connectionSide: 'both',
       connectedItems: [{ id: 3 }, { id: 1 }]
@@ -42,7 +42,7 @@ export class CanvasLayoutComponent {
     {
       id: 3,
       width: 150,
-      height: 150,
+      height: 250,
       url: 'products/Owen-Right.png',
       connectionSide: 'right',
       connectedItems: [{ id: 2 }]
