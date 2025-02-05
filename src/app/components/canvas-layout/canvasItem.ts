@@ -1,6 +1,6 @@
 export class CanvasItem {
 
-     image !: HTMLImageElement;
+    image !: HTMLImageElement;
     width !: number;
     height !: number;
     x !: number;
@@ -24,6 +24,7 @@ export class CanvasItem {
     sideBoxHeight !: number;
     sideBoxPadding !: number;
 
+    secondItemInfo !: CanvasItem;
 
     constructor(image: HTMLImageElement, x: number, y: number, isDragging: boolean, connectionSide: string = '', connectedItems: { id: number }[] = []) {
         this.image = image;
@@ -47,12 +48,13 @@ export class CanvasItem {
 
     drawItem(ctx: CanvasRenderingContext2D) {
         this.addShadowWhenDragging(ctx);
-        ctx.save();
-        const centerX = this.x + this.image.width / 2;
-        const centerY = this.y + this.image.height / 2;
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.rotateAngle * Math.PI / 180);
-        ctx.drawImage(this.image, -this.image.width / 2, -this.image.height / 2, this.image.width, this.image.height);
+        // ctx.save();
+        // const centerX = this.x + this.image.width / 2;
+        // const centerY = this.y + this.image.height / 2;
+        // ctx.translate(centerX, centerY);
+        // ctx.rotate(this.rotateAngle * Math.PI / 180);
+        // ctx.drawImage(this.image, -this.image.width / 2, -this.image.height / 2, this.image.width, this.image.height);
+        ctx.drawImage(this.image, this.x, this.y, this.image.width, this.image.height);
         this.addExtraBox(ctx);
         this.createConnectionArea(ctx);
         ctx.restore();
@@ -77,9 +79,10 @@ export class CanvasItem {
         }
     }
 
-    setMatchConnectionInfo(isMatch: boolean, shadowSide: string) {
+    setMatchConnectionInfo(isMatch: boolean, secondItemInfo: CanvasItem, shadowSide: string) {
         this.isConnectionConditionMatched = isMatch;
         this.shadowSide = shadowSide;
+        this.secondItemInfo = secondItemInfo;
     }
 
     addShadowWhenDragging(ctx: CanvasRenderingContext2D) {
@@ -97,16 +100,13 @@ export class CanvasItem {
     }
 
     addExtraBox(ctx: CanvasRenderingContext2D) {
-        const boxWidth = 40;
-        const boxHeight = 40;
-        const boxS = 20;
         if (this.connectionSide === 'left') {
             ctx.save();
-            const boxX = -this.image.width / 2 - boxS - 20;
-            const boxY = -20;
+            const boxX = this.x - this.sideBoxWidth;
+            const boxY = this.y + this.height / 2 - this.sideBoxPadding / 2;
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight); // Draw the border
+            ctx.strokeRect(boxX, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border
             // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
 
             // Restore the context state
@@ -114,24 +114,24 @@ export class CanvasItem {
         }
         if (this.connectionSide === 'right') {
             ctx.save();
-            const boxX = this.image.width / 2;
-            const boxY = -20;
+            const boxX = this.x + this.width;
+            const boxY = this.y + this.height / 2 - this.sideBoxPadding / 2;
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight); // Draw the border
+            ctx.strokeRect(boxX, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border
             // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
             // Restore the context state
             ctx.restore();
         }
         if (this.connectionSide === 'both') {
             ctx.save();
-            const boxXR = this.image.width / 2;
-            const boxY = -20;
-            const boxXL = -this.image.width / 2 - boxS - 20;
+            const boxXR = this.x + this.width;
+            const boxY = this.y + this.height / 2 - this.sideBoxPadding / 2;
+            const boxXL = this.x - this.sideBoxWidth;
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxXL, boxY, boxWidth, boxHeight); // Draw the border LEFT
-            ctx.strokeRect(boxXR, boxY, boxWidth, boxHeight); // Draw the border RIGHT
+            ctx.strokeRect(boxXL, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border LEFT
+            ctx.strokeRect(boxXR, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border RIGHT
             // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
 
             // Restore the context state
@@ -162,47 +162,89 @@ export class CanvasItem {
         if (this.isConnectionConditionMatched) {
             if (this.shadowSide === 'right') {
                 ctx.save();
-                const boxX = - this.image.width - 25;
-                const boxY = -this.image.width / 2;
-                ctx.strokeStyle = 'transparent';
-                ctx.lineWidth = 1;
-                ctx.fillStyle = 'lightgreen';
-                ctx.strokeRect(boxX, boxY, 100, this.image.height); // Draw the border
-                ctx.fillRect(boxX + 1, boxY + 1, 100, this.image.height); // Fill the box
+                const boxX = this.x + this.width;
+                const boxY = this.y;
+                // ctx.strokeStyle = 'transparent';
+                // ctx.lineWidth = 1;
+                // ctx.fillStyle = 'lightgreen';
+                // ctx.strokeRect(boxX, boxY, 100, this.secondItemInfo.image.height); // Draw the border
+                // ctx.fillRect(boxX + 1, boxY + 1, 100, this.secondItemInfo.image.height); // Fill the box
+                // Apply a green tint to the image
+                ctx.globalAlpha = 0.5; // Set transparency for the shadow
+                ctx.fillStyle = 'rgba(0, 87, 0, 0.53)'; // Green tint with transparency
+                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
+                // Draw the shadow image beside the original image
+                ctx.drawImage(
+                    this.secondItemInfo.image,
+                    boxX + 1, // Offset horizontally to place the shadow beside the image
+                    boxY + 1,
+                    this.secondItemInfo.image.width,
+                    this.secondItemInfo.image.height
+                );
                 ctx.restore();
-            }
-            if (this.shadowSide === 'left') {
+            } else if (this.shadowSide === 'left') {
                 ctx.save();
-                const boxX = this.image.width / 2;
-                const boxY = -this.image.width / 2;
-                ctx.strokeStyle = 'transparent';
-                ctx.lineWidth = 1;
-                ctx.fillStyle = 'lightgreen';
-                ctx.strokeRect(boxX, boxY, 100, this.image.height); // Draw the border
-                ctx.fillRect(boxX + 1, boxY + 1, 100, this.image.height); // Fill the box
+                const boxX = this.x - this.secondItemInfo.image.width;
+                const boxY = this.y;
+                // ctx.strokeStyle = 'transparent';
+                // ctx.lineWidth = 1;
+                // ctx.fillStyle = 'lightgreen';
+                // ctx.strokeRect(boxX, boxY, 100, this.secondItemInfo.image.height); // Draw the border
+                // ctx.fillRect(boxX + 1, boxY + 1, 100, this.secondItemInfo.image.height); // Fill the box
+                ctx.globalAlpha = 0.5; // Set transparency for the shadow
+                ctx.fillStyle = 'rgba(0, 87, 0, 0.53)'; // Green tint with transparency
+                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
+                ctx.drawImage(
+                    this.secondItemInfo.image,
+                    boxX + 1, // Offset horizontally to place the shadow beside the image
+                    boxY + 1,
+                    this.secondItemInfo.image.width,
+                    this.secondItemInfo.image.height
+                );
                 ctx.restore();
-            }
-            if (this.shadowSide === 'both') {
+            } else if (this.shadowSide === 'both') {
                 if (this.connectionSide === 'left') {
                     ctx.save();
-                    const boxX = - this.image.width - 25;
-                    const boxY = -this.image.width / 2;
-                    ctx.strokeStyle = 'transparent';
-                    ctx.lineWidth = 1;
-                    ctx.fillStyle = 'lightgreen';
-                    ctx.strokeRect(boxX, boxY, 100, this.image.height); // Draw the border
-                    ctx.fillRect(boxX + 1, boxY + 1, 100, this.image.height); // Fill the box
+                    const boxX = this.x - this.secondItemInfo.image.width;
+                    const boxY = this.y;
+                    // ctx.strokeStyle = 'transparent';
+                    // ctx.lineWidth = 1;
+                    // ctx.fillStyle = 'lightgreen';
+                    // ctx.strokeRect(boxX, boxY, 100, this.secondItemInfo.image.height); // Draw the border
+                    // ctx.fillRect(boxX + 1, boxY + 1, 100, this.secondItemInfo.image.height); // Fill the box
+                    ctx.globalAlpha = 0.5; // Set transparency for the shadow
+                    ctx.fillStyle = 'rgba(0, 87, 0, 0.68)'; // Green tint with transparency
+                    ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
+                    // Draw the shadow image beside the original image
+                    ctx.drawImage(
+                        this.secondItemInfo.image,
+                        boxX + 1, // Offset horizontally to place the shadow beside the image
+                        boxY + 1,
+                        this.secondItemInfo.image.width,
+                        this.secondItemInfo.image.height
+                    );
                     ctx.restore();
                 }
-                if (this.connectionSide === 'right') {
+                else if (this.connectionSide === 'right') {
                     ctx.save();
-                    const boxX = this.image.width / 2;
-                    const boxY = -this.image.width / 2;
-                    ctx.strokeStyle = 'transparent';
-                    ctx.lineWidth = 1;
-                    ctx.fillStyle = 'lightgreen';
-                    ctx.strokeRect(boxX, boxY, 100, this.image.height); // Draw the border
-                    ctx.fillRect(boxX + 1, boxY + 1, 100, this.image.height); // Fill the box
+                    const boxX = this.x + this.width;
+                    const boxY = this.y;
+                    // ctx.strokeStyle = 'transparent';
+                    // ctx.lineWidth = 1;
+                    // ctx.fillStyle = 'lightgreen';
+                    // ctx.strokeRect(boxX, boxY, 100, this.secondItemInfo.image.height); // Draw the border
+                    // ctx.fillRect(boxX + 1, boxY + 1, 100, this.secondItemInfo.image.height); // Fill the box
+                    ctx.globalAlpha = 0.5; // Set transparency for the shadow
+                    ctx.fillStyle = 'rgba(0, 87, 0, 0.68)'; // Green tint with transparency
+                    ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
+                    // Draw the shadow image beside the original image
+                    ctx.drawImage(
+                        this.secondItemInfo.image,
+                        boxX + 1, // Offset horizontally to place the shadow beside the image
+                        boxY + 1,
+                        this.secondItemInfo.image.width,
+                        this.secondItemInfo.image.height
+                    );
                     ctx.restore();
                 }
             }
@@ -251,41 +293,38 @@ export class CanvasItem {
     }
 
     isItemExtraBoxOverLapping(secondItem: CanvasItem): boolean {
-        const boxWidth = 40;
-        const boxHeight = 40;
-        const boxS = 20;
 
         if (this.connectionSide === 'right' || this.connectionSide === 'both') {
-            const thisBoxX = this.x + this.image.width / 2;
-            const thisBoxY = this.y - 20;
+            const thisBoxX = this.x + this.width;
+            const thisBoxY = this.y + this.height / 2 - this.sideBoxPadding / 2;
             if (secondItem.connectionSide === 'left' || secondItem.connectionSide === 'both') {
-                const secondItemBoxX = secondItem.x - secondItem.image.width / 2 - boxS - 20;
-                const secondItemBoxY = secondItem.y - 20;
+                const secondItemBoxX = secondItem.x - this.sideBoxWidth;
+                const secondItemBoxY = secondItem.y + secondItem.height / 2 - this.sideBoxPadding / 2;
 
                 // Check for overlap between the two boxes
                 return !(
-                    thisBoxX + boxWidth <= secondItemBoxX || // This box is to the left of the other box
-                    secondItemBoxX + boxWidth <= thisBoxX || // This box is to the right of the other box
-                    thisBoxY + boxHeight <= secondItemBoxY || // This box is above the other box
-                    secondItemBoxY + boxHeight <= thisBoxY    // This box is below the other box
+                    thisBoxX + this.sideBoxWidth <= secondItemBoxX || // This box is to the left of the other box
+                    secondItemBoxX + secondItem.sideBoxWidth <= thisBoxX || // This box is to the right of the other box
+                    thisBoxY + this.sideBoxHeight <= secondItemBoxY || // This box is above the other box
+                    secondItemBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
                 );
             }
         }
         if (this.connectionSide === 'left' || this.connectionSide === 'both') {
-            const thisBoxX = this.x - this.image.width / 2 - boxS - 20;
-            const thisBoxY = this.y - 20;
+            const thisBoxX = this.x - this.sideBoxWidth;
+            const thisBoxY = this.y + this.height / 2 - this.sideBoxPadding / 2;
 
             // Calculate bounding box for the other item's right connection side box
             if (secondItem.connectionSide === 'right' || secondItem.connectionSide === 'both') {
-                const secondItemBoxX = secondItem.x + secondItem.image.width / 2;
-                const secondItemBoxY = secondItem.y - 20;
+                const secondItemBoxX = secondItem.x + secondItem.width;
+                const secondItemBoxY = secondItem.y + secondItem.height / 2 - this.sideBoxPadding / 2;
 
                 // Check for overlap between the two boxes
                 return !(
-                    thisBoxX + boxWidth <= secondItemBoxX || // This box is to the left of the other box
-                    secondItemBoxX + boxWidth <= thisBoxX || // This box is to the right of the other box
-                    thisBoxY + boxHeight <= secondItemBoxY || // This box is above the other box
-                    secondItemBoxY + boxHeight <= thisBoxY    // This box is below the other box
+                    thisBoxX + this.sideBoxWidth <= secondItemBoxX || // This box is to the left of the other box
+                    secondItemBoxX + secondItem.sideBoxWidth <= thisBoxX || // This box is to the right of the other box
+                    thisBoxY + this.sideBoxHeight <= secondItemBoxY || // This box is above the other box
+                    secondItemBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
                 );
             }
         }
@@ -293,3 +332,73 @@ export class CanvasItem {
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// isCollidingTop(secondItem: CanvasItem): boolean {
+//     return (
+//         this.y < secondItem.y + secondItem.image.height &&
+//         this.y >= secondItem.y + secondItem.image.height - 5 &&
+//         this.x + this.image.width > secondItem.x &&
+//         this.x < secondItem.x + secondItem.image.width
+//     );
+// }
+
+// isCollidingBottom(secondItem: CanvasItem): boolean {
+//     return (
+//         this.y + this.image.height > secondItem.y &&
+//         this.y + this.image.height <= secondItem.y + 5 &&
+//         this.x + this.image.width > secondItem.x &&
+//         this.x < secondItem.x + secondItem.image.width
+//     );
+// }
+
+// isCollidingLeft(secondItem: CanvasItem): boolean {
+//     return (
+//         this.x < secondItem.x + secondItem.image.width &&
+//         this.x >= secondItem.x + secondItem.image.width - 5 &&
+//         this.y + this.image.height > secondItem.y &&
+//         this.y < secondItem.y + secondItem.image.height
+//     );
+// }
+
+// isCollidingRight(secondItem: CanvasItem): boolean {
+//     return (
+//         this.x + this.image.width > secondItem.x &&
+//         this.x + this.image.width <= secondItem.x + 5 &&
+//         this.y + this.image.height > secondItem.y &&
+//         this.y < secondItem.y + secondItem.image.height
+//     );
+// }
