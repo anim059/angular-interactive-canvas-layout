@@ -1,10 +1,14 @@
 import { CanvasItem } from "./canvasItem";
 
 export class CanvasItemManager {
+
     private items: CanvasItem[] = [];
+
     private selectedCanvasItem: CanvasItem | null = null;
+
     selectedItemStartX !: number;
     selectedItemStartY !: number;
+
     selectedItemPrevX !: number;
     selectedItemPrevY !: number;
 
@@ -73,15 +77,23 @@ export class CanvasItemManager {
                     } else {
                         this.selectedCanvasItem.hasCollision = false;
                     }
-                    if (this.selectedCanvasItem?.isItemExtraBoxOverLapping(item)) {
+                    const selectedItemBoxOverLapping = this.selectedCanvasItem?.isItemExtraBoxOverLapping(item);
+                    if (selectedItemBoxOverLapping.status) {
                         console.log('extra box collision');
-                        if(this.selectedCanvasItem.isDragging){
+                        if (this.selectedCanvasItem.isDragging) {
                             item.setMatchConnectionInfo(true, this.selectedCanvasItem,
-                                this.selectedCanvasItem.connectionSide === 'both' ? 'both' : this.selectedCanvasItem.connectionSide === 'left' ? 'right' : 'left');
-                        }else{
-                            // item.setMatchConnectionInfo(false, this.selectedCanvasItem,
-                            //     this.selectedCanvasItem.connectionSide === 'both' ? 'both' : this.selectedCanvasItem.connectionSide === 'left' ? 'right' : 'left');
-                            // this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width, item.connectionSide);
+                                (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
+                                    ? selectedItemBoxOverLapping.connectionSide
+                                    : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left');
+                        } else {
+                            item.setMatchConnectionInfo(false, this.selectedCanvasItem,
+                                (selectedItemBoxOverLapping.connectionSide === 'both-right' || selectedItemBoxOverLapping.connectionSide === 'both-left')
+                                    ? selectedItemBoxOverLapping.connectionSide
+                                    : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left'
+                            );
+                            this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width,
+                                selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'right' ? 'left' : 'right'
+                            );
                         }
                     } else {
                         item.setMatchConnectionInfo(false, this.selectedCanvasItem, this.selectedCanvasItem.connectionSide);
@@ -105,8 +117,10 @@ export class CanvasItemManager {
     }
 
     deselectAllItems(mouseX: number, mouseY: number, ctx: CanvasRenderingContext2D): void {
-        if (this.selectedCanvasItem && this.isCursorOverCloseIcon(mouseX, mouseY)) {
-            this.items.splice(this.items.indexOf(this.selectedCanvasItem), 1);
+        if (this.selectedCanvasItem && this.isCursorOverRotateIcon(mouseX, mouseY)) {
+            this.selectedCanvasItem.rotate(90);
+            this.drawAll(ctx);
+            return;
         }
         // if (this.selectedCanvasItem) {
         //     const targetAngle = (this.selectedCanvasItem.rotateAngle + 45) % 360;
@@ -125,10 +139,8 @@ export class CanvasItemManager {
         //     };
         //     animate();
         // }
-        if (this.selectedCanvasItem && this.isCursorOverRotateIcon(mouseX, mouseY)) {
-            this.selectedCanvasItem.rotate(90);
-            this.drawAll(ctx);
-            return;
+        if (this.selectedCanvasItem && this.isCursorOverCloseIcon(mouseX, mouseY)) {
+            this.items.splice(this.items.indexOf(this.selectedCanvasItem), 1);
         }
         this.selectedCanvasItem = null;
         this.items.forEach(item => {

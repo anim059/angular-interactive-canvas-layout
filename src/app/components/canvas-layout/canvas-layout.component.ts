@@ -25,25 +25,25 @@ export class CanvasLayoutComponent {
   productList: { url: string, id: number,width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }[] = [
     {
       id: 1,
-      url: 'products/Amber-Bouclé-Swivel.png',
-      width: 200,
-      height: 150,
+      url: 'products/furniture1.png',
+      width: 100,
+      height: 100,
       connectionSide: 'left',
       connectedItems: [{ id: 2 }]
     },
     {
       id: 2,
-      width: 250,
-      height: 200,
-      url: 'products/Owen-Armchair.png',
+      width: 150,
+      height: 100,
+      url: 'products/furniture2.png',
       connectionSide: 'both',
       connectedItems: [{ id: 3 }, { id: 1 }]
     },
     {
       id: 3,
-      width: 150,
-      height: 250,
-      url: 'products/Owen-Right.png',
+      width: 100,
+      height: 110,
+      url: 'products/furniture3.png',
       connectionSide: 'right',
       connectedItems: [{ id: 2 }]
     }
@@ -105,9 +105,6 @@ export class CanvasLayoutComponent {
     const mouseY = event.offsetY;
     this.itemManager.deselectAllItems(mouseX, mouseY, this.ctx);
     const selectedItem = this.itemManager.selectedItem(mouseX, mouseY);
-    // if (selectedItem) {
-    //   selectedItem.isDragging = true;
-    // }
     this.drawCanvas();
   }
 
