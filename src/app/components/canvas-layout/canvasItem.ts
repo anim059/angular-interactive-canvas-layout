@@ -363,7 +363,7 @@ export class CanvasItem {
     getRotatedExtraBoxBoundingBox(side: 'left' | 'right'): { minX: number, maxX: number, minY: number, maxY: number } {
         const halfSideBoxWidth = this.sideBoxWidth / 2;
         const halfSideBoxHeight = this.sideBoxHeight / 2;
-    
+
         // Calculate the four corners of the extra box relative to its center
         const corners = [
             { x: -halfSideBoxWidth, y: -halfSideBoxHeight },
@@ -371,35 +371,37 @@ export class CanvasItem {
             { x: halfSideBoxWidth, y: halfSideBoxHeight },
             { x: -halfSideBoxWidth, y: halfSideBoxHeight }
         ];
-    
+
         // Determine the position of the extra box based on the specified side
         let boxCenterX: number, boxCenterY: number;
-    
+
         if (side === 'left') {
-            boxCenterX = -(this.image.width / 2 + this.sideBoxWidth);
-            boxCenterY = 0; // Center vertically relative to the image
+            boxCenterX = this.x - this.sideBoxWidth;
+            boxCenterY = this.y + this.height / 2;
         } else if (side === 'right') {
-            boxCenterX = this.image.width / 2;
-            boxCenterY = 0; // Center vertically relative to the image
+            boxCenterX = this.x + this.width;
+            boxCenterY = this.y + this.height / 2;
         }
-    
+
         // Transform the corners into screen coordinates using rotation
         const radians = (this.rotateAngle * Math.PI) / 180;
         const transformedCorners = corners.map(corner => ({
             x:
-                this.x + this.image.width / 2 + // Translate to the center of the image
-                corner.x * Math.cos(radians) - corner.y * Math.sin(radians) + boxCenterX,
+                boxCenterX +
+                corner.x * Math.cos(radians) -
+                corner.y * Math.sin(radians),
             y:
-                this.y + this.image.height / 2 + // Translate to the center of the image
-                corner.x * Math.sin(radians) + corner.y * Math.cos(radians) + boxCenterY
+                boxCenterY +
+                corner.x * Math.sin(radians) +
+                corner.y * Math.cos(radians)
         }));
-    
+
         // Find the min and max bounds of the transformed corners
         const minX = Math.min(...transformedCorners.map(corner => corner.x));
         const maxX = Math.max(...transformedCorners.map(corner => corner.x));
         const minY = Math.min(...transformedCorners.map(corner => corner.y));
         const maxY = Math.max(...transformedCorners.map(corner => corner.y));
-    
+
         return { minX, maxX, minY, maxY };
     }
 
