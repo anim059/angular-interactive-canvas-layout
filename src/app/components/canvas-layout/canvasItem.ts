@@ -47,18 +47,18 @@ export class CanvasItem {
     }
 
     drawItem(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         this.addShadowWhenDragging(ctx);
-        // ctx.save();
-        // const centerX = this.x + this.image.width / 2;
-        // const centerY = this.y + this.image.height / 2;
-        // ctx.translate(centerX, centerY);
-        // ctx.rotate(this.rotateAngle * Math.PI / 180);
-        // ctx.drawImage(this.image, -this.image.width / 2, -this.image.height / 2, this.image.width, this.image.height);
-        // ctx.restore();
-        ctx.drawImage(this.image, this.x, this.y, this.image.width, this.image.height);
+        const centerX = this.x + this.image.width / 2;
+        const centerY = this.y + this.image.height / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate((this.rotateAngle * Math.PI) / 180);
+        ctx.drawImage(this.image, -this.image.width / 2, -this.image.height / 2, this.image.width, this.image.height);
+        // ctx.drawImage(this.image, this.x, this.y, this.image.width, this.image.height);
         this.addExtraBox(ctx);
         this.createConnectionArea(ctx);
-        this.addBorderOnSelectedItem(ctx);
+        ctx.restore();
+        this.addBorderOnSelectedItem(ctx, centerX, centerY);
     }
 
     addShadowWhenDragging(ctx: CanvasRenderingContext2D) {
@@ -76,70 +76,70 @@ export class CanvasItem {
     }
 
     addExtraBox(ctx: CanvasRenderingContext2D) {
-        if (this.connectionSide === 'left') {
-            ctx.save();
-            const boxX = this.x - this.sideBoxWidth;
-            const boxY = this.y + (this.height - this.sideBoxHeight) / 2;
-            ctx.strokeStyle = 'blue'; // Border color
-            ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxX, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border
-            // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
+        const boxWidth = this.sideBoxWidth;
+        const boxHeight = this.sideBoxHeight;
 
-            // Restore the context state
-            ctx.restore();
-        }
-        if (this.connectionSide === 'right') {
-            ctx.save();
-            const boxX = this.x + this.width;
-            const boxY = this.y + (this.height - this.sideBoxHeight) / 2;
+        if (this.connectionSide === 'left' || this.connectionSide === 'both') {
+            const boxX = -(this.image.width / 2 + boxWidth); // Position relative to the center
+            const boxY = -boxHeight / 2; // Center vertically
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxX, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border
-            // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
-            // Restore the context state
-            ctx.restore();
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight); // Draw the left box
         }
-        if (this.connectionSide === 'both') {
-            ctx.save();
-            const boxXR = this.x + this.width;
-            const boxY = this.y + (this.height - this.sideBoxHeight) / 2;
-            const boxXL = this.x - this.sideBoxWidth;
-            ctx.strokeStyle = 'blue'; // Border color
-            ctx.lineWidth = 2; // Border thickness
-            ctx.strokeRect(boxXL, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border LEFT
-            ctx.strokeRect(boxXR, boxY, this.sideBoxWidth, this.sideBoxHeight); // Draw the border RIGHT
-            // ctx.fillRect(boxX + 1, boxY + 1, boxSize - 2, boxSize - 2); // Fill the box
 
-            // Restore the context state
-            ctx.restore();
+        if (this.connectionSide === 'right' || this.connectionSide === 'both') {
+            const boxX = this.image.width / 2; // Position relative to the center
+            const boxY = -boxHeight / 2; // Center vertically
+            ctx.strokeStyle = 'blue'; // Border color
+            ctx.lineWidth = 2; // Border thickness
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight); // Draw the right box
         }
     }
 
-    addBorderOnSelectedItem(ctx: CanvasRenderingContext2D) {
+    addBorderOnSelectedItem(ctx: CanvasRenderingContext2D, centerX: number, centerY: number) {
         if (this.isSelected) {
             ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate((this.rotateAngle * Math.PI) / 180);
+
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
-            ctx.strokeRect(this.x, this.y, this.image.width, this.image.height);
-            ctx.drawImage(this.closeImageIcon, this.x - 8, this.y - 24, this.closeImageSize, this.closeImageSize);
-            ctx.drawImage(this.rotateImageIcon, this.x + this.image.width - 20, this.y - 24, this.rotateImageSize, this.rotateImageSize);
+            ctx.strokeRect(-(this.image.width / 2), -(this.image.height / 2), this.image.width, this.image.height);
+
+            // Draw close icon
+            const closeIconX = -(this.image.width / 2) - this.closeImageSize + 10;
+            const closeIconY = -(this.image.height / 2) - this.closeImageSize;
+            ctx.drawImage(
+                this.closeImageIcon,
+                closeIconX,
+                closeIconY,
+                this.closeImageSize,
+                this.closeImageSize
+            );
+
+            // Draw rotate icon
+            const rotateIconX = this.image.width / 2 - 10;
+            const rotateIconY = -(this.image.height / 2) - this.closeImageSize;
+            ctx.drawImage(
+                this.rotateImageIcon,
+                rotateIconX,
+                rotateIconY,
+                this.rotateImageSize,
+                this.rotateImageSize
+            );
+
             ctx.restore();
-        } else {
-            ctx.strokeStyle = 'transparent';
-            ctx.lineWidth = 0;
-            ctx.setLineDash([]);
         }
     }
 
     createConnectionArea(ctx: CanvasRenderingContext2D) {
         if (this.isConnectionConditionMatched) {
             if (this.shadowSide === 'right') {
-                ctx.save();
-                const boxX = this.x + this.width;
-                const boxY = this.y;
+                const boxX = this.image.width / 2 + 1;
+                const boxY = -(this.image.height / 2) + 1;
                 // ctx.strokeStyle = 'transparent';
                 // ctx.lineWidth = 1;
                 // ctx.fillStyle = 'lightgreen';
@@ -148,57 +148,52 @@ export class CanvasItem {
                 // Apply a green tint to the image
                 ctx.globalAlpha = 0.6; // Set transparency for the shadow
                 ctx.fillStyle = 'rgb(0, 255, 0)'; // Green tint with transparency
-                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
+                ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height); // Draw a green rectangle as the shadow background
                 // Draw the shadow image beside the original image
                 ctx.drawImage(
                     this.secondItemInfo.image,
-                    boxX + 1, // Offset horizontally to place the shadow beside the image
-                    boxY + 1,
+                    boxX, // Offset horizontally to place the shadow beside the image
+                    boxY,
                     this.secondItemInfo.image.width,
                     this.secondItemInfo.image.height
                 );
-                ctx.restore();
             } else if (this.shadowSide === 'left') {
-                ctx.save();
-                const boxX = this.x - this.secondItemInfo.image.width;
-                const boxY = this.y;
+                const boxX = -(this.image.width / 2) - this.secondItemInfo.image.width - 1;
+                const boxY = -(this.image.height / 2) + 1;
                 ctx.globalAlpha = 0.6;
                 ctx.fillStyle = 'rgb(0, 255, 0)';
-                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
+                ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
                 ctx.drawImage(
                     this.secondItemInfo.image,
-                    boxX + 1,
-                    boxY + 1,
+                    boxX,
+                    boxY,
                     this.secondItemInfo.image.width,
                     this.secondItemInfo.image.height
                 );
-                ctx.restore();
             } else if (this.shadowSide === 'bRight') {
-                ctx.save();
-                const boxX = this.x - this.secondItemInfo.image.width;
-                const boxY = this.y;
+                const boxX = -(this.image.width / 2) - this.secondItemInfo.image.width - 1;
+                const boxY = -(this.image.height / 2) + 1;
                 ctx.globalAlpha = 0.6;
                 ctx.fillStyle = 'rgb(0, 255, 0)';
-                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
+                ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
                 ctx.drawImage(
                     this.secondItemInfo.image,
-                    boxX + 1,
-                    boxY + 1,
+                    boxX,
+                    boxY,
                     this.secondItemInfo.image.width,
                     this.secondItemInfo.image.height
                 );
                 ctx.restore();
             } else if (this.shadowSide === 'bLeft') {
-                ctx.save();
-                const boxX = this.x + this.width;
-                const boxY = this.y;
+                const boxX = this.image.width / 2 + 1;
+                const boxY = -(this.image.height / 2) + 1;
                 ctx.globalAlpha = 0.6;
                 ctx.fillStyle = 'rgb(0, 255, 0)';
-                ctx.fillRect(boxX + 1, boxY + 1, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
+                ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
                 ctx.drawImage(
                     this.secondItemInfo.image,
-                    boxX + 1,
-                    boxY + 1,
+                    boxX,
+                    boxY,
                     this.secondItemInfo.image.width,
                     this.secondItemInfo.image.height
                 );
@@ -208,30 +203,63 @@ export class CanvasItem {
     }
 
     conatain(mouseX: number, mouseY: number) {
+        const dx = mouseX - (this.x + this.image.width / 2);
+        const dy = mouseY - (this.y + this.image.height / 2);
+
+        const rotatedX = dx * Math.cos(-this.rotateAngle * Math.PI / 180) - dy * Math.sin(-this.rotateAngle * Math.PI / 180);
+        const rotatedY = dx * Math.sin(-this.rotateAngle * Math.PI / 180) + dy * Math.cos(-this.rotateAngle * Math.PI / 180);
         return (
-            mouseX >= this.x &&
-            mouseX <= this.x + this.image.width &&
-            mouseY >= this.y &&
-            mouseY <= this.y + this.image.height
+            rotatedX >= -this.image.width / 2 &&
+            rotatedX <= this.image.width / 2 &&
+            rotatedY >= -this.image.height / 2 &&
+            rotatedY <= this.image.height / 2
         );
     }
 
-    isCloseIconClicked(mouseX: number, mouseY: number) {
+    isCloseIconClicked(mouseX: number, mouseY: number): boolean {
+        const dx = mouseX - (this.x + this.image.width / 2);
+        const dy = mouseY - (this.y + this.image.height / 2);
+
+        // Transform mouse coordinates into the rotated coordinate system
+        const rotatedX =
+            dx * Math.cos(-this.rotateAngle * Math.PI / 180) -
+            dy * Math.sin(-this.rotateAngle * Math.PI / 180);
+        const rotatedY =
+            dx * Math.sin(-this.rotateAngle * Math.PI / 180) +
+            dy * Math.cos(-this.rotateAngle * Math.PI / 180);
+
+        const closeIconX = -(this.image.width / 2) - this.closeImageSize + 10;
+        const closeIconY = -(this.image.height / 2) - this.closeImageSize;
+
         return (
-            mouseX >= this.x - 8 &&
-            mouseX <= this.x - 8 + this.closeImageSize &&
-            mouseY >= this.y - 24 &&
-            mouseY <= this.y - 24 + this.closeImageSize
-        )
+            rotatedX >= closeIconX &&
+            rotatedX <= closeIconX + this.closeImageSize &&
+            rotatedY >= closeIconY &&
+            rotatedY <= closeIconY + this.closeImageSize
+        );
     }
 
-    isRotateIconClicked(mouseX: number, mouseY: number) {
+    isRotateIconClicked(mouseX: number, mouseY: number): boolean {
+        const dx = mouseX - (this.x + this.image.width / 2);
+        const dy = mouseY - (this.y + this.image.height / 2);
+
+        // Transform mouse coordinates into the rotated coordinate system
+        const rotatedX =
+            dx * Math.cos(-this.rotateAngle * Math.PI / 180) -
+            dy * Math.sin(-this.rotateAngle * Math.PI / 180);
+        const rotatedY =
+            dx * Math.sin(-this.rotateAngle * Math.PI / 180) +
+            dy * Math.cos(-this.rotateAngle * Math.PI / 180);
+
+        const rotateIconX = this.image.width / 2 - 10;
+        const rotateIconY = -(this.image.height / 2) - this.closeImageSize;
+
         return (
-            mouseX >= this.x + this.image.width - 20 &&
-            mouseX <= this.x + this.image.width - 20 + this.closeImageSize &&
-            mouseY >= this.y - 24 &&
-            mouseY <= this.y - 24 + this.closeImageSize
-        )
+            rotatedX >= rotateIconX &&
+            rotatedX <= rotateIconX + this.closeImageSize &&
+            rotatedY >= rotateIconY &&
+            rotatedY <= rotateIconY + this.closeImageSize
+        );
     }
 
     rotate(degrees: number): void {
@@ -240,40 +268,58 @@ export class CanvasItem {
     }
 
     isOverLapping(secondItem: CanvasItem): boolean {
+        const itemBox = this.getRotatedBoundingBox();
+        const secondItemBox = secondItem.getRotatedBoundingBox();
+
         return !(
-            this.x + this.image.width <= secondItem.x ||
-            secondItem.x + secondItem.image.width <= this.x ||
-            this.y + this.image.height <= secondItem.y ||
-            secondItem.y + secondItem.image.height <= this.y
+            itemBox.maxX <= secondItemBox.minX ||
+            secondItemBox.maxX <= itemBox.minX ||
+            itemBox.maxY <= secondItemBox.minY ||
+            secondItemBox.maxY <= itemBox.minY
         )
     }
 
+    getRotatedBoundingBox(): { minX: number, maxX: number, minY: number, maxY: number } {
+
+        const halfWidth = this.image.width / 2;
+        const halfHeight = this.image.height / 2;
+
+        const corners = [
+            { x: -halfWidth, y: -halfHeight },
+            { x: halfWidth, y: -halfHeight },
+            { x: halfWidth, y: halfHeight },
+            { x: -halfWidth, y: halfHeight }
+        ];
+
+        const centerX = this.x + halfWidth;
+        const centerY = this.y + halfHeight;
+        const radians = (this.rotateAngle * Math.PI) / 180;
+
+        const transformedCorners = corners.map(corner => {
+            const x = corner.x * Math.cos(radians) - corner.y * Math.sin(radians);
+            const y = corner.x * Math.sin(radians) + corner.y * Math.cos(radians);
+            return { x: x + centerX, y: y + centerY };
+        });
+
+        // Find the min and max bounds of the transformed corners
+        const minX = Math.min(...transformedCorners.map(corner => corner.x));
+        const maxX = Math.max(...transformedCorners.map(corner => corner.x));
+        const minY = Math.min(...transformedCorners.map(corner => corner.y));
+        const maxY = Math.max(...transformedCorners.map(corner => corner.y));
+
+        return { minX, maxX, minY, maxY };
+
+    }
+
     isItemExtraBoxOverLapping(secondItem: CanvasItem): { status: boolean, connectionSide: string } {
-
         if (this.connectionSide === 'both' && secondItem.connectionSide === 'both') {
-            const thisBoxXR = this.x + this.width;
-            const thisBoxL = this.x - this.sideBoxWidth;
-            const thisBoxY = this.y + (this.height - this.sideBoxHeight) / 2;
-
-            const otherBoxXR = secondItem.x + secondItem.width;
-            const otherBoxL = secondItem.x - secondItem.sideBoxWidth;
-            const otherBoxY = secondItem.y + (secondItem.height - secondItem.sideBoxHeight) / 2;
-
-            if (!(
-                thisBoxXR + this.sideBoxWidth <= otherBoxL || // This box is to the left of the other box
-                otherBoxL + secondItem.sideBoxWidth <= thisBoxXR || // This box is to the right of the other box
-                thisBoxY + this.sideBoxHeight <= otherBoxY || // This box is above the other box
-                otherBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
-            )) {
+            // Check if the right box of this item overlaps with the left box of the other item
+            if (this.isExtraBoxOverlappingWithRotation(secondItem, 'right', 'left')) {
                 return { status: true, connectionSide: 'bRight' };
             }
 
-            if (!(
-                thisBoxL + this.sideBoxWidth <= otherBoxXR || // This box is to the left of the other box
-                otherBoxXR + secondItem.sideBoxWidth <= thisBoxL || // This box is to the right of the other box
-                thisBoxY + this.sideBoxHeight <= otherBoxY || // This box is above the other box
-                otherBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
-            )) {
+            // Check if the left box of this item overlaps with the right box of the other item
+            if (this.isExtraBoxOverlappingWithRotation(secondItem, 'left', 'right')) {
                 return { status: true, connectionSide: 'bLeft' };
             }
 
@@ -281,45 +327,80 @@ export class CanvasItem {
         }
 
         if (this.connectionSide === 'right' || this.connectionSide === 'both') {
-            const thisBoxX = this.x + this.width;
-            const thisBoxY = this.y + (this.height - this.sideBoxHeight) / 2;
+            // Check if the right box of this item overlaps with the left box of the other item
             if (secondItem.connectionSide === 'left' || secondItem.connectionSide === 'both') {
-                const secondItemBoxX = secondItem.x - this.sideBoxWidth;
-                const secondItemBoxY = secondItem.y + (secondItem.height - secondItem.sideBoxHeight) / 2;
-
-                // Check for overlap between the two boxes
-                return {
-                    status: !(
-                        thisBoxX + this.sideBoxWidth <= secondItemBoxX || // This box is to the left of the other box
-                        secondItemBoxX + secondItem.sideBoxWidth <= thisBoxX || // This box is to the right of the other box
-                        thisBoxY + this.sideBoxHeight <= secondItemBoxY || // This box is above the other box
-                        secondItemBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
-                    ), connectionSide: 'right'
-                };
+                if (this.isExtraBoxOverlappingWithRotation(secondItem, 'right', 'left')) {
+                    return { status: true, connectionSide: 'right' };
+                }
             }
         }
 
         if (this.connectionSide === 'left' || this.connectionSide === 'both') {
-            const thisBoxX = this.x - this.sideBoxWidth;
-            const thisBoxY = this.y + (this.height - this.sideBoxHeight) / 2;
-
-            // Calculate bounding box for the other item's right connection side box
+            // Check if the left box of this item overlaps with the right box of the other item
             if (secondItem.connectionSide === 'right' || secondItem.connectionSide === 'both') {
-                const secondItemBoxX = secondItem.x + secondItem.width;
-                const secondItemBoxY = secondItem.y + (secondItem.height - secondItem.sideBoxHeight) / 2;
-
-                // Check for overlap between the two boxes
-                return {
-                    status: !(
-                        thisBoxX + this.sideBoxWidth <= secondItemBoxX || // This box is to the left of the other box
-                        secondItemBoxX + secondItem.sideBoxWidth <= thisBoxX || // This box is to the right of the other box
-                        thisBoxY + this.sideBoxHeight <= secondItemBoxY || // This box is above the other box
-                        secondItemBoxY + secondItem.sideBoxHeight <= thisBoxY    // This box is below the other box
-                    ), connectionSide: 'left'
-                };
+                if (this.isExtraBoxOverlappingWithRotation(secondItem, 'left', 'right')) {
+                    return { status: true, connectionSide: 'left' };
+                }
             }
         }
-        return { status: false, connectionSide: '' };;
+
+        return { status: false, connectionSide: '' };
+    }
+
+    isExtraBoxOverlappingWithRotation(otherItem: CanvasItem, side: 'left' | 'right', otherSide: 'left' | 'right'): boolean {
+        const box1 = this.getRotatedExtraBoxBoundingBox(side);
+        const box2 = otherItem.getRotatedExtraBoxBoundingBox(otherSide);
+
+        // Check for overlap using AABB logic
+        return !(
+            box1.maxX <= box2.minX || // This box is to the left of the other box
+            box2.maxX <= box1.minX || // This box is to the right of the other box
+            box1.maxY <= box2.minY || // This box is above the other box
+            box2.maxY <= box1.minY    // This box is below the other box
+        );
+    }
+
+    getRotatedExtraBoxBoundingBox(side: 'left' | 'right'): { minX: number, maxX: number, minY: number, maxY: number } {
+        const halfSideBoxWidth = this.sideBoxWidth / 2;
+        const halfSideBoxHeight = this.sideBoxHeight / 2;
+    
+        // Calculate the four corners of the extra box relative to its center
+        const corners = [
+            { x: -halfSideBoxWidth, y: -halfSideBoxHeight },
+            { x: halfSideBoxWidth, y: -halfSideBoxHeight },
+            { x: halfSideBoxWidth, y: halfSideBoxHeight },
+            { x: -halfSideBoxWidth, y: halfSideBoxHeight }
+        ];
+    
+        // Determine the position of the extra box based on the specified side
+        let boxCenterX: number, boxCenterY: number;
+    
+        if (side === 'left') {
+            boxCenterX = -(this.image.width / 2 + this.sideBoxWidth);
+            boxCenterY = 0; // Center vertically relative to the image
+        } else if (side === 'right') {
+            boxCenterX = this.image.width / 2;
+            boxCenterY = 0; // Center vertically relative to the image
+        }
+    
+        // Transform the corners into screen coordinates using rotation
+        const radians = (this.rotateAngle * Math.PI) / 180;
+        const transformedCorners = corners.map(corner => ({
+            x:
+                this.x + this.image.width / 2 + // Translate to the center of the image
+                corner.x * Math.cos(radians) - corner.y * Math.sin(radians) + boxCenterX,
+            y:
+                this.y + this.image.height / 2 + // Translate to the center of the image
+                corner.x * Math.sin(radians) + corner.y * Math.cos(radians) + boxCenterY
+        }));
+    
+        // Find the min and max bounds of the transformed corners
+        const minX = Math.min(...transformedCorners.map(corner => corner.x));
+        const maxX = Math.max(...transformedCorners.map(corner => corner.x));
+        const minY = Math.min(...transformedCorners.map(corner => corner.y));
+        const maxY = Math.max(...transformedCorners.map(corner => corner.y));
+    
+        return { minX, maxX, minY, maxY };
     }
 
     mergeConnectedItems(updatedX: number, updatedY: number, otherItemWidth: number, otherItemConnectionSide: string) {
