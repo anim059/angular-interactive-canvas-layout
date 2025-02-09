@@ -2,6 +2,7 @@ import { CanvasItem } from "./canvasItem";
 
 export class CanvasItemManager {
 
+   
     private items: CanvasItem[] = [];
 
     private selectedCanvasItem: CanvasItem | null = null;
@@ -91,15 +92,19 @@ export class CanvasItemManager {
                                     ? selectedItemBoxOverLapping.connectionSide
                                     : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left'
                             );
-                            this.selectedCanvasItem.mergeConnectedItems(item.x, item.y, item.width,
-                                selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'right' ? 'left' : 'right'
-                            );
+                            this.selectedCanvasItem.mergeConnectedItems(item);
                         }
                     } else {
                         item.setMatchConnectionInfo(false, this.selectedCanvasItem, this.selectedCanvasItem.connectionSide);
                     }
                 }
             };
+        }
+        if(this.selectedCanvasItem && this.selectedCanvasItem.detectLeftBoxHover(mouseX, mouseY)){
+            console.log('left box hover');
+        }
+        if(this.selectedCanvasItem && this.selectedCanvasItem.detectRightBoxHover(mouseX, mouseY)){
+            console.log('right box hover');
         }
     }
 
