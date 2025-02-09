@@ -50,7 +50,7 @@ export class CanvasLayoutComponent {
   ];
 
 
-  ngAfterViewInit() {
+ ngAfterViewInit() {
     if (isPlatformBrowser(this.plateformId)) {
       this.canvas = this.canvasRef.nativeElement;
       this.ctx = this.canvas.getContext('2d')!;
