@@ -80,7 +80,6 @@ export class CanvasItemManager {
                     }
                     const selectedItemBoxOverLapping = this.selectedCanvasItem?.isItemExtraBoxOverLapping(item);
                     if (selectedItemBoxOverLapping.status) {
-                        console.log('extra box collision');
                         if (this.selectedCanvasItem.isDragging) {
                             item.setMatchConnectionInfo(true, this.selectedCanvasItem,
                                 (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
@@ -88,7 +87,7 @@ export class CanvasItemManager {
                                     : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left');
                         } else {
                             item.setMatchConnectionInfo(false, this.selectedCanvasItem,
-                                (selectedItemBoxOverLapping.connectionSide === 'both-right' || selectedItemBoxOverLapping.connectionSide === 'both-left')
+                                (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
                                     ? selectedItemBoxOverLapping.connectionSide
                                     : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left'
                             );

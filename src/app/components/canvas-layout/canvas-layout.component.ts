@@ -25,7 +25,7 @@ export class CanvasLayoutComponent {
   productList: { url: string, id: number,width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }[] = [
     {
       id: 1,
-      url: 'products/furniture1.png',
+      url: 'products/category-img-21.png',
       width: 100,
       height: 100,
       connectionSide: 'left',
@@ -35,7 +35,7 @@ export class CanvasLayoutComponent {
       id: 2,
       width: 150,
       height: 100,
-      url: 'products/furniture2.png',
+      url: 'products/furniture2.jpg',
       connectionSide: 'both',
       connectedItems: [{ id: 3 }, { id: 1 }]
     },
@@ -43,10 +43,26 @@ export class CanvasLayoutComponent {
       id: 3,
       width: 100,
       height: 110,
-      url: 'products/furniture3.png',
+      url: 'products/category-img-21.png',
       connectionSide: 'right',
       connectedItems: [{ id: 2 }]
-    }
+    },
+    // {
+    //   id: 4,
+    //   url: 'products/armChairs.png',
+    //   width: 100,
+    //   height: 100,
+    //   connectionSide: 'left',
+    //   connectedItems: [{ id: 2 }]
+    // },
+    // {
+    //   id: 5,
+    //   width: 100,
+    //   height: 110,
+    //   url: 'products/sofas.png',
+    //   connectionSide: 'right',
+    //   connectedItems: [{ id: 2 }]
+    // }
   ];
 
 

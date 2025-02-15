@@ -1,3 +1,6 @@
+// https://stackoverflow.com/questions/45187291/how-to-change-the-color-of-an-image-in-a-html5-canvas-without-changing-its-patte
+
+
 export class CanvasItem {
 
     image !: HTMLImageElement;
@@ -75,30 +78,6 @@ export class CanvasItem {
         }
     }
 
-    getRotatedExtraBoxPosition(side: 'left' | 'right'): { x: number, y: number } {
-        // Determine the position of the extra box relative to the center of the image
-        let boxCenterX: number = 0, boxCenterY: number = 0;
-
-        if (side === 'left') {
-            boxCenterX = -(this.image.width / 2 + this.sideBoxWidth);
-            boxCenterY = 0; // Center vertically relative to the image
-        } else if (side === 'right') {
-            boxCenterX = this.image.width / 2;
-            boxCenterY = 0; // Center vertically relative to the image
-        }
-
-        // Apply rotation transformation to the extra box's center
-        const radians = (this.rotateAngle * Math.PI) / 180;
-        const rotatedBoxX =
-            this.x + this.image.width / 2 + // Translate to the center of the image
-            boxCenterX * Math.cos(radians) - boxCenterY * Math.sin(radians);
-        const rotatedBoxY =
-            this.y + this.image.height / 2 + // Translate to the center of the image
-            boxCenterX * Math.sin(radians) + boxCenterY * Math.cos(radians);
-
-        return { x: rotatedBoxX, y: rotatedBoxY };
-    }
-
     addExtraBox(ctx: CanvasRenderingContext2D) {
         ctx.save();
 
@@ -110,9 +89,6 @@ export class CanvasItem {
         ctx.rotate((this.rotateAngle * Math.PI) / 180); // Apply rotation
 
         if (this.connectionSide === 'left' || this.connectionSide === 'both') {
-            // Get the rotated position of the left extra box
-            const { x: boxX, y: boxY } = this.getRotatedExtraBoxPosition('left');
-
             // Draw the left extra box relative to the rotated coordinate system
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
@@ -125,9 +101,6 @@ export class CanvasItem {
         }
 
         if (this.connectionSide === 'right' || this.connectionSide === 'both') {
-            // Get the rotated position of the right extra box
-            const { x: boxX, y: boxY } = this.getRotatedExtraBoxPosition('right');
-
             // Draw the right extra box relative to the rotated coordinate system
             ctx.strokeStyle = 'blue'; // Border color
             ctx.lineWidth = 2; // Border thickness
@@ -140,45 +113,6 @@ export class CanvasItem {
         }
 
         ctx.restore(); // Restore context after drawing rotated elements
-    }
-
-    addBorderOnSelectedItem(ctx: CanvasRenderingContext2D, centerX: number, centerY: number) {
-        if (this.isSelected) {
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.rotate((this.rotateAngle * Math.PI) / 180);
-
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(-(this.image.width / 2), -(this.image.height / 2), this.image.width, this.image.height);
-
-            // Draw close icon
-            const closeIconX = -(this.image.width / 2) - this.closeImageSize + 10;
-            const closeIconY = -(this.image.height / 2) - this.closeImageSize;
-            ctx.drawImage(
-                this.closeImageIcon,
-                closeIconX,
-                closeIconY,
-                this.closeImageSize,
-                this.closeImageSize
-            );
-
-            // Draw rotate icon
-            const rotateIconX = this.image.width / 2 - 10;
-            const rotateIconY = -(this.image.height / 2) - this.closeImageSize;
-            ctx.drawImage(
-                this.rotateImageIcon,
-                rotateIconX,
-                rotateIconY,
-                this.rotateImageSize,
-                this.rotateImageSize
-            );
-
-            ctx.restore();
-        }
     }
 
     createConnectionArea(ctx: CanvasRenderingContext2D) {
@@ -198,13 +132,17 @@ export class CanvasItem {
                 const boxX = this.image.width / 2 + 1; // Offset horizontally
                 const boxY = -(this.image.height / 2) + 1; // Center vertically
 
-                ctx.globalAlpha = 0.6; // Set transparency for the shadow
-                ctx.fillStyle = 'rgb(0, 255, 0)'; // Green tint with transparency
+                // ctx.globalAlpha = 0.6;
+                ctx.fillStyle = 'rgb(0, 255, 0)';
+                ctx.globalCompositeOperation = "color";
 
-                // Draw a green rectangle as the shadow background
                 ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
+                ctx.globalCompositeOperation = "source-over";
 
-                // Draw the shadow image beside the original image
+                ctx.globalCompositeOperation = "destination-in";
+                ctx.drawImage(this.secondItemInfo.image, 0, 0);
+                ctx.globalCompositeOperation = "source-over";
+
                 ctx.drawImage(
                     this.secondItemInfo.image,
                     boxX,
@@ -275,6 +213,45 @@ export class CanvasItem {
         }
     }
 
+    addBorderOnSelectedItem(ctx: CanvasRenderingContext2D, centerX: number, centerY: number) {
+        if (this.isSelected) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate((this.rotateAngle * Math.PI) / 180);
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(-(this.image.width / 2), -(this.image.height / 2), this.image.width, this.image.height);
+
+            // Draw close icon
+            const closeIconX = -(this.image.width / 2) - this.closeImageSize + 10;
+            const closeIconY = -(this.image.height / 2) - this.closeImageSize;
+            ctx.drawImage(
+                this.closeImageIcon,
+                closeIconX,
+                closeIconY,
+                this.closeImageSize,
+                this.closeImageSize
+            );
+
+            // Draw rotate icon
+            const rotateIconX = this.image.width / 2 - 10;
+            const rotateIconY = -(this.image.height / 2) - this.closeImageSize;
+            ctx.drawImage(
+                this.rotateImageIcon,
+                rotateIconX,
+                rotateIconY,
+                this.rotateImageSize,
+                this.rotateImageSize
+            );
+
+            ctx.restore();
+        }
+    }
+
     conatain(mouseX: number, mouseY: number) {
         const dx = mouseX - (this.x + this.image.width / 2);
         const dy = mouseY - (this.y + this.image.height / 2);
@@ -334,7 +311,6 @@ export class CanvasItem {
             rotatedY <= rotateIconY + this.closeImageSize
         );
     }
-
 
     detectLeftBoxHover(mouseX: number, mouseY: number): boolean {
         const dx = mouseX - (this.x + this.image.width / 2);
@@ -545,7 +521,7 @@ export class CanvasItem {
         if (thisAdjustedSide === 'right' || thisAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'left' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'right', 'left')) {
-                    return { status: true, connectionSide: 'right' };
+                    return { status: true, connectionSide: this.connectionSide };
                 }
             }
         }
@@ -553,7 +529,7 @@ export class CanvasItem {
         if (thisAdjustedSide === 'left' || thisAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'right' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'left', 'right')) {
-                    return { status: true, connectionSide: 'left' };
+                    return { status: true, connectionSide: this.connectionSide };
                 }
             }
         }
@@ -561,7 +537,7 @@ export class CanvasItem {
         if (thisAdjustedSide === 'top' || thisAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'bottom' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'top', 'bottom')) {
-                    return { status: true, connectionSide: 'top' };
+                    return { status: true, connectionSide: this.connectionSide };
                 }
             }
         }
@@ -569,7 +545,7 @@ export class CanvasItem {
         if (thisAdjustedSide === 'bottom' || thisAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'top' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'bottom', 'top')) {
-                    return { status: true, connectionSide: 'bottom' };
+                    return { status: true, connectionSide: this.connectionSide };
                 }
             }
         }
@@ -577,33 +553,30 @@ export class CanvasItem {
         return { status: false, connectionSide: '' };
     }
 
-
     mergeConnectedItems(otherItem: CanvasItem): void {
         const adjustedSide = this.getAdjustedConnectionSide();
         const otherAdjustedSide = otherItem.getAdjustedConnectionSide();
-    
+
         // Calculate the center of both items
-        const thisCenterX = this.x + this.image.width / 2;
-        const thisCenterY = this.y + this.image.height / 2;
         const otherCenterX = otherItem.x + otherItem.image.width / 2;
         const otherCenterY = otherItem.y + otherItem.image.height / 2;
-    
+
         if (adjustedSide === 'right' && otherAdjustedSide === 'left') {
             // Align this item's right side with the other item's left side
-            this.x = otherCenterX - this.image.width / 2 - this.sideBoxWidth - this.sideBoxPadding;
+            this.x = otherCenterX - (this.image.width + otherItem.image.width / 2);
             this.y = otherCenterY - this.image.height / 2; // Vertically align centers
         } else if (adjustedSide === 'left' && otherAdjustedSide === 'right') {
             // Align this item's left side with the other item's right side
-            this.x = otherCenterX + otherItem.image.width / 2 + otherItem.sideBoxPadding;
+            this.x = otherCenterX + otherItem.image.width / 2;
             this.y = otherCenterY - this.image.height / 2; // Vertically align centers
         } else if (adjustedSide === 'top' && otherAdjustedSide === 'bottom') {
             // Align this item's top side with the other item's bottom side
             this.x = otherCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = otherCenterY + otherItem.image.height / 2 + otherItem.sideBoxPadding;
+            this.y = otherCenterY + otherItem.image.height / 2;
         } else if (adjustedSide === 'bottom' && otherAdjustedSide === 'top') {
             // Align this item's bottom side with the other item's top side
             this.x = otherCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = otherCenterY - this.image.height / 2 - this.sideBoxWidth - this.sideBoxPadding;
+            this.y = otherCenterY - (this.image.width + otherItem.image.width / 2);
         }
     }
 
