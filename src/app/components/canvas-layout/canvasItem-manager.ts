@@ -2,7 +2,6 @@ import { CanvasItem } from "./canvasItem";
 
 export class CanvasItemManager {
 
-   
     private items: CanvasItem[] = [];
 
     private selectedCanvasItem: CanvasItem | null = null;
@@ -70,39 +69,39 @@ export class CanvasItemManager {
             canvas.style.cursor = 'move';
         }
         if (this.selectedCanvasItem && this.selectedItemPrevX && this.selectedItemPrevY) {
-            for (const item of this.items) {
-                if (item !== this.selectedCanvasItem) {
-                    if (this.selectedCanvasItem?.isOverLapping(item) && this.selectedCanvasItem.isDragging) {
+            for (const otherItem of this.items) {
+                if (otherItem !== this.selectedCanvasItem) {
+                    if (this.selectedCanvasItem?.isOverLapping(otherItem) && this.selectedCanvasItem.isDragging) {
                         this.selectedCanvasItem.hasCollision = true;
                         break;
                     } else {
                         this.selectedCanvasItem.hasCollision = false;
                     }
-                    const selectedItemBoxOverLapping = this.selectedCanvasItem?.isItemExtraBoxOverLapping(item);
+                    const selectedItemBoxOverLapping = this.selectedCanvasItem?.isItemsSideBoxOverLapping(otherItem);
                     if (selectedItemBoxOverLapping.status) {
                         if (this.selectedCanvasItem.isDragging) {
-                            item.setMatchConnectionInfo(true, this.selectedCanvasItem,
+                            otherItem.setMatchConnectionInfo(true, this.selectedCanvasItem,
                                 (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
                                     ? selectedItemBoxOverLapping.connectionSide
                                     : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left');
                         } else {
-                            item.setMatchConnectionInfo(false, this.selectedCanvasItem,
+                            otherItem.setMatchConnectionInfo(false, this.selectedCanvasItem,
                                 (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
                                     ? selectedItemBoxOverLapping.connectionSide
                                     : selectedItemBoxOverLapping.connectionSide === 'left' ? 'right' : 'left'
                             );
-                            this.selectedCanvasItem.mergeConnectedItems(item);
+                            this.selectedCanvasItem.mergeConnectedItems(otherItem);
                         }
                     } else {
-                        item.setMatchConnectionInfo(false, this.selectedCanvasItem, this.selectedCanvasItem.connectionSide);
+                        otherItem.setMatchConnectionInfo(false, this.selectedCanvasItem, this.selectedCanvasItem.connectionSide);
                     }
                 }
             };
         }
-        if(this.selectedCanvasItem && this.selectedCanvasItem.detectLeftBoxHover(mouseX, mouseY)){
+        if (this.selectedCanvasItem && this.selectedCanvasItem.detectLeftBoxHover(mouseX, mouseY)) {
             console.log('left box hover');
         }
-        if(this.selectedCanvasItem && this.selectedCanvasItem.detectRightBoxHover(mouseX, mouseY)){
+        if (this.selectedCanvasItem && this.selectedCanvasItem.detectRightBoxHover(mouseX, mouseY)) {
             console.log('right box hover');
         }
     }

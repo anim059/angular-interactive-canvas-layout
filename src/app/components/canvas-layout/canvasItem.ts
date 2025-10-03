@@ -115,6 +115,12 @@ export class CanvasItem {
         ctx.restore(); // Restore context after drawing rotated elements
     }
 
+    setMatchConnectionInfo(isMatch: boolean, secondItemInfo: CanvasItem, shadowSide: string) {
+        this.isConnectionConditionMatched = isMatch;
+        this.shadowSide = shadowSide;
+        this.secondItemInfo = secondItemInfo;
+    }
+
     createConnectionArea(ctx: CanvasRenderingContext2D) {
         if (this.isConnectionConditionMatched) {
             ctx.save();
@@ -122,27 +128,23 @@ export class CanvasItem {
             // Translate to the center of the image
             const centerX = this.x + this.image.width / 2;
             const centerY = this.y + this.image.height / 2;
-
+            console.log(centerX, centerY);
             // Apply rotation transformation
             ctx.translate(centerX, centerY);
             ctx.rotate((this.rotateAngle * Math.PI) / 180);
-
+            console.log(this.shadowSide);
             if (this.shadowSide === 'right') {
                 // Calculate the position of the connection area for the right side
                 const boxX = this.image.width / 2 + 1; // Offset horizontally
                 const boxY = -(this.image.height / 2) + 1; // Center vertically
 
-                // ctx.globalAlpha = 0.6;
-                ctx.fillStyle = 'rgb(0, 255, 0)';
-                ctx.globalCompositeOperation = "color";
+                ctx.globalAlpha = 0.6; // Set transparency for the shadow
+                ctx.fillStyle = 'rgb(0, 255, 0)'; // Green tint with transparency
 
+                // Draw a green rectangle as the shadow background
                 ctx.fillRect(boxX, boxY, this.secondItemInfo.image.width, this.secondItemInfo.image.height);
-                ctx.globalCompositeOperation = "source-over";
 
-                ctx.globalCompositeOperation = "destination-in";
-                ctx.drawImage(this.secondItemInfo.image, 0, 0);
-                ctx.globalCompositeOperation = "source-over";
-
+                // Draw the shadow image beside the original image
                 ctx.drawImage(
                     this.secondItemInfo.image,
                     boxX,
@@ -407,7 +409,7 @@ export class CanvasItem {
 
     }
 
-    getRotatedExtraBoxBoundingBox(side: 'left' | 'right' | 'top' | 'bottom'): { minX: number, maxX: number, minY: number, maxY: number } {
+    getRotatedSideBoxBoundingBox(side: 'left' | 'right' | 'top' | 'bottom'): { minX: number, maxX: number, minY: number, maxY: number } {
         const halfSideBoxWidth = this.sideBoxWidth / 2;
         const halfSideBoxHeight = this.sideBoxHeight / 2;
 
@@ -421,7 +423,6 @@ export class CanvasItem {
 
         // Determine the position of the extra box based on the specified side
         let boxCenterX: number, boxCenterY: number;
-
         if (side === 'left') {
             boxCenterX = -(this.image.width / 2 + this.sideBoxWidth);
             boxCenterY = 0; // Center vertically
@@ -430,12 +431,11 @@ export class CanvasItem {
             boxCenterY = 0; // Center vertically
         } else if (side === 'top') {
             boxCenterX = 0; // Center horizontally
-            boxCenterY = -(this.image.height / 2 + this.sideBoxHeight);
+            boxCenterY = -(this.image.height / 2 + this.sideBoxWidth);
         } else if (side === 'bottom') {
             boxCenterX = 0; // Center horizontally
             boxCenterY = this.image.height / 2;
         }
-
         // Transform the corners into screen coordinates using rotation
         const radians = (this.rotateAngle * Math.PI) / 180;
         const transformedCorners = corners.map(corner => ({
@@ -458,22 +458,22 @@ export class CanvasItem {
 
     isRotatedBoxOverlapping(
         secondItem: CanvasItem,
-        thisSide: 'left' | 'right' | 'top' | 'bottom',
-        otherSide: 'left' | 'right' | 'top' | 'bottom'
+        selectedItemSide: 'left' | 'right' | 'top' | 'bottom',
+        secondItemSide: 'left' | 'right' | 'top' | 'bottom'
     ): boolean {
-        const thisBox = this.getRotatedExtraBoxBoundingBox(thisSide);
-        const otherBox = secondItem.getRotatedExtraBoxBoundingBox(otherSide);
+        const selectedItemBox = this.getRotatedSideBoxBoundingBox(selectedItemSide);
+        const secondItemBox = secondItem.getRotatedSideBoxBoundingBox(secondItemSide);
 
         return !(
-            thisBox.maxX <= otherBox.minX || // This box is to the left of the other box
-            otherBox.maxX <= thisBox.minX || // This box is to the right of the other box
-            thisBox.maxY <= otherBox.minY || // This box is above the other box
-            otherBox.maxY <= thisBox.minY    // This box is below the other box
+            selectedItemBox.maxX <= secondItemBox.minX || // This box is to the left of the other box
+            secondItemBox.maxX <= selectedItemBox.minX || // This box is to the right of the other box
+            selectedItemBox.maxY <= secondItemBox.minY || // This box is above the other box
+            secondItemBox.maxY <= selectedItemBox.minY    // This box is below the other box
         );
     }
 
-    getAdjustedConnectionSide(): string {
-        const adjustedSide = (() => {
+    getItemAdjustedConnectionSide(): string {
+        const selectedItemAdjustedSide = (() => {
             const angle = this.rotateAngle % 360; // Normalize the angle to 0-360 degrees
 
             if (this.connectionSide === 'left') {
@@ -487,20 +487,24 @@ export class CanvasItem {
                 if (angle === 270) return 'top';
                 return 'right'; // Default to right for angles between 0 and 90
             } else if (this.connectionSide === 'both') {
+                if (angle === 90) return 'top-bottom';
+                if (angle === 180) return 'right-left';
+                if (angle === 270) return 'bottom-top';
                 return 'both'; // Both sides remain active regardless of rotation
             }
 
             return ''; // No connection side
         })();
 
-        return adjustedSide;
+        return selectedItemAdjustedSide;
     }
 
-    isItemExtraBoxOverLapping(secondItem: CanvasItem): { status: boolean, connectionSide: string } {
-        const thisAdjustedSide = this.getAdjustedConnectionSide();
-        const secondItemAdjustedSide = secondItem.getAdjustedConnectionSide();
+    isItemsSideBoxOverLapping(secondItem: CanvasItem): { status: boolean, connectionSide: string } {
 
-        if (thisAdjustedSide === 'both' && secondItemAdjustedSide === 'both') {
+        const thisSelectedItemAdjustedSide = this.getItemAdjustedConnectionSide();
+        const secondItemAdjustedSide = secondItem.getItemAdjustedConnectionSide();
+        console.log(thisSelectedItemAdjustedSide, secondItemAdjustedSide);
+        if (thisSelectedItemAdjustedSide === 'both' && secondItemAdjustedSide === 'both') {
             // Check all possible combinations of sides
             if (this.isRotatedBoxOverlapping(secondItem, 'right', 'left')) {
                 return { status: true, connectionSide: 'bRight' };
@@ -518,31 +522,32 @@ export class CanvasItem {
             return { status: false, connectionSide: '' };
         }
 
-        if (thisAdjustedSide === 'right' || thisAdjustedSide === 'both') {
+        if (thisSelectedItemAdjustedSide === 'right' || thisSelectedItemAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'left' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'right', 'left')) {
-                    return { status: true, connectionSide: this.connectionSide };
+                    return { status: true, connectionSide: thisSelectedItemAdjustedSide };
                 }
             }
         }
 
-        if (thisAdjustedSide === 'left' || thisAdjustedSide === 'both') {
+        if (thisSelectedItemAdjustedSide === 'left' || thisSelectedItemAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'right' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'left', 'right')) {
-                    return { status: true, connectionSide: this.connectionSide };
+                    return { status: true, connectionSide: thisSelectedItemAdjustedSide };
                 }
             }
         }
 
-        if (thisAdjustedSide === 'top' || thisAdjustedSide === 'both') {
-            if (secondItemAdjustedSide === 'bottom' || secondItemAdjustedSide === 'both') {
+        if (thisSelectedItemAdjustedSide === 'top' || thisSelectedItemAdjustedSide === 'top-bottom') {
+            if (secondItemAdjustedSide === 'bottom' || secondItemAdjustedSide === 'top-bottom') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'top', 'bottom')) {
+                    console.log(this.connectionSide);
                     return { status: true, connectionSide: this.connectionSide };
                 }
             }
         }
 
-        if (thisAdjustedSide === 'bottom' || thisAdjustedSide === 'both') {
+        if (thisSelectedItemAdjustedSide === 'bottom' || thisSelectedItemAdjustedSide === 'both') {
             if (secondItemAdjustedSide === 'top' || secondItemAdjustedSide === 'both') {
                 if (this.isRotatedBoxOverlapping(secondItem, 'bottom', 'top')) {
                     return { status: true, connectionSide: this.connectionSide };
@@ -553,37 +558,47 @@ export class CanvasItem {
         return { status: false, connectionSide: '' };
     }
 
-    mergeConnectedItems(otherItem: CanvasItem): void {
-        const adjustedSide = this.getAdjustedConnectionSide();
-        const otherAdjustedSide = otherItem.getAdjustedConnectionSide();
+    mergeConnectedItems(secondItem: CanvasItem): void {
+        const selectedItemAdjustedSide = this.getItemAdjustedConnectionSide();
+        const secondItemAdjustedSide = secondItem.getItemAdjustedConnectionSide() !== 'both'
+            ? secondItem.getItemAdjustedConnectionSide() : selectedItemAdjustedSide === 'left' ? 'right' : 'left';
 
         // Calculate the center of both items
-        const otherCenterX = otherItem.x + otherItem.image.width / 2;
-        const otherCenterY = otherItem.y + otherItem.image.height / 2;
+        const secondItemCenterX = secondItem.x + secondItem.image.width / 2;
+        const secondItemCenterY = secondItem.y + secondItem.image.height / 2;
 
-        if (adjustedSide === 'right' && otherAdjustedSide === 'left') {
+        if (selectedItemAdjustedSide === 'right' && secondItemAdjustedSide === 'left') {
             // Align this item's right side with the other item's left side
-            this.x = otherCenterX - (this.image.width + otherItem.image.width / 2);
-            this.y = otherCenterY - this.image.height / 2; // Vertically align centers
-        } else if (adjustedSide === 'left' && otherAdjustedSide === 'right') {
+            this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
+            this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+        } else if (selectedItemAdjustedSide === 'left' && secondItemAdjustedSide === 'right') {
             // Align this item's left side with the other item's right side
-            this.x = otherCenterX + otherItem.image.width / 2;
-            this.y = otherCenterY - this.image.height / 2; // Vertically align centers
-        } else if (adjustedSide === 'top' && otherAdjustedSide === 'bottom') {
+            this.x = secondItemCenterX + secondItem.image.width / 2;
+            this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+        } else if (selectedItemAdjustedSide === 'top' && secondItemAdjustedSide === 'bottom') {
             // Align this item's top side with the other item's bottom side
-            this.x = otherCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = otherCenterY + otherItem.image.height / 2;
-        } else if (adjustedSide === 'bottom' && otherAdjustedSide === 'top') {
+            this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+            this.y = secondItemCenterY + secondItem.image.height / 2;
+        } else if (selectedItemAdjustedSide === 'bottom' && secondItemAdjustedSide === 'top') {
             // Align this item's bottom side with the other item's top side
-            this.x = otherCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = otherCenterY - (this.image.width + otherItem.image.width / 2);
+            this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+            this.y = secondItemCenterY - (this.image.width + secondItem.image.width / 2);
+        } else if (selectedItemAdjustedSide === 'both') {
+            if (secondItemAdjustedSide === 'left') {
+                this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
+                this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+            } else if (secondItemAdjustedSide === 'right') {
+                this.x = secondItemCenterX + secondItem.image.width / 2;
+                this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+            }
+            if (secondItemAdjustedSide === 'top') {
+                this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+                this.y = secondItemCenterY - (this.image.width + secondItem.image.width / 2);
+            } else if (secondItemAdjustedSide === 'bottom') {
+                this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+                this.y = secondItemCenterY + secondItem.image.height / 2;
+            }
         }
-    }
-
-    setMatchConnectionInfo(isMatch: boolean, secondItemInfo: CanvasItem, shadowSide: string) {
-        this.isConnectionConditionMatched = isMatch;
-        this.shadowSide = shadowSide;
-        this.secondItemInfo = secondItemInfo;
     }
 
 }

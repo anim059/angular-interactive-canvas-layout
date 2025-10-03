@@ -12,7 +12,8 @@ import { isPlatformBrowser } from '@angular/common';
   styleUrl: './canvas-layout.component.css'
 })
 export class CanvasLayoutComponent {
- @ViewChild('imageCanvas') private canvasRef!: ElementRef;
+  
+  @ViewChild('imageCanvas') private canvasRef!: ElementRef;
 
   private canvas!: HTMLCanvasElement;
 
@@ -22,7 +23,7 @@ export class CanvasLayoutComponent {
 
   plateformId = inject(PLATFORM_ID);
 
-  productList: { url: string, id: number,width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }[] = [
+  productList: { url: string, id: number, width: number, height: number, connectionSide: string, connectedItems: { id: number }[] }[] = [
     {
       id: 1,
       url: 'products/category-img-21.png',
@@ -65,8 +66,7 @@ export class CanvasLayoutComponent {
     // }
   ];
 
-
- ngAfterViewInit() {
+  ngAfterViewInit() {
     if (isPlatformBrowser(this.plateformId)) {
       this.canvas = this.canvasRef.nativeElement;
       this.ctx = this.canvas.getContext('2d')!;
@@ -131,7 +131,7 @@ export class CanvasLayoutComponent {
     this.itemManager.moveSelectedItem(mouseX, mouseY, this.canvas);
     this.drawCanvas();
   }
-
+  
   onMouseUp() {
     this.itemManager.deselectItem();
   }
