@@ -42,6 +42,9 @@ export class CanvasItemManager {
 
     moveSelectedItem(mouseX: number, mouseY: number, canvas: HTMLCanvasElement): void {
         if (this.selectedCanvasItem?.isDragging) {
+            // const selectedCanvasItemInfo = this.selectedCanvasItem.getRotatedBoundingBox();
+            // console.log(selectedCanvasItemInfo);
+            // console.log(this.selectedCanvasItem.x, this.selectedCanvasItem.y);
             if (0 <= this.selectedCanvasItem.x && (canvas.width >= (this.selectedCanvasItem.x + this.selectedCanvasItem.image.width))) {
                 if ((mouseX - this.selectedItemStartX) > 0 && (mouseX - this.selectedItemStartX) < (canvas.width - this.selectedCanvasItem.image.width)) {
                     this.selectedCanvasItem.x = mouseX - this.selectedItemStartX;
@@ -71,7 +74,7 @@ export class CanvasItemManager {
         if (this.selectedCanvasItem && this.selectedItemPrevX && this.selectedItemPrevY) {
             for (const otherItem of this.items) {
                 if (otherItem !== this.selectedCanvasItem) {
-                    if (this.selectedCanvasItem?.isOverLapping(otherItem) && this.selectedCanvasItem.isDragging) {
+                    if (this.selectedCanvasItem?.isItemOverLapping(otherItem) && this.selectedCanvasItem.isDragging) {
                         this.selectedCanvasItem.hasCollision = true;
                         break;
                     } else {
@@ -80,6 +83,7 @@ export class CanvasItemManager {
                     const selectedItemBoxOverLapping = this.selectedCanvasItem?.isItemsSideBoxOverLapping(otherItem);
                     if (selectedItemBoxOverLapping.status) {
                         if (this.selectedCanvasItem.isDragging) {
+                            console.log(selectedItemBoxOverLapping.connectionSide);
                             otherItem.setMatchConnectionInfo(true, this.selectedCanvasItem,
                                 (selectedItemBoxOverLapping.connectionSide === 'bRight' || selectedItemBoxOverLapping.connectionSide === 'bLeft')
                                     ? selectedItemBoxOverLapping.connectionSide
@@ -99,10 +103,10 @@ export class CanvasItemManager {
             };
         }
         if (this.selectedCanvasItem && this.selectedCanvasItem.detectLeftBoxHover(mouseX, mouseY)) {
-            console.log('left box hover');
+            // console.log('left box hover');
         }
         if (this.selectedCanvasItem && this.selectedCanvasItem.detectRightBoxHover(mouseX, mouseY)) {
-            console.log('right box hover');
+            // console.log('right box hover');
         }
     }
 

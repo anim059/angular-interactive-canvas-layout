@@ -42,7 +42,7 @@ export class CanvasLayoutComponent {
     },
     {
       id: 3,
-      width: 100,
+      width: 130,
       height: 110,
       url: 'products/category-img-21.png',
       connectionSide: 'right',
