@@ -28,7 +28,7 @@ export class CanvasLayoutComponent {
       id: 1,
       url: 'products/category-img-21.png',
       width: 100,
-      height: 100,
+      height: 110,
       connectionSide: 'left',
       connectedItems: [{ id: 2 }]
     },
@@ -42,7 +42,7 @@ export class CanvasLayoutComponent {
     },
     {
       id: 3,
-      width: 130,
+      width: 110,
       height: 110,
       url: 'products/category-img-21.png',
       connectionSide: 'right',

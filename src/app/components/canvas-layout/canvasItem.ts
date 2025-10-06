@@ -366,8 +366,8 @@ export class CanvasItem {
     }
 
     isItemOverLapping(secondItem: CanvasItem): boolean {
-        const itemBox = this.getRotatedBoundingBox();
-        const secondItemBox = secondItem.getRotatedBoundingBox();
+        const itemBox = this.getRotatedBoundingArea();
+        const secondItemBox = secondItem.getRotatedBoundingArea();
 
         return !(
             itemBox.maxX <= secondItemBox.minX ||
@@ -377,7 +377,7 @@ export class CanvasItem {
         )
     }
 
-    getRotatedBoundingBox(): { minX: number, maxX: number, minY: number, maxY: number } {
+    getRotatedBoundingArea(): { minX: number, maxX: number, minY: number, maxY: number } {
 
         const halfWidth = this.image.width / 2;
         const halfHeight = this.image.height / 2;
@@ -409,7 +409,7 @@ export class CanvasItem {
 
     }
 
-    getRotatedSideBoxBoundingBox(side: 'left' | 'right' | 'top' | 'bottom'): { minX: number, maxX: number, minY: number, maxY: number, width: number  } {
+    getRotatedSideBoxBoundingArea(side: 'left' | 'right' | 'top' | 'bottom'): { minX: number, maxX: number, minY: number, maxY: number, width: number } {
         const halfSideBoxWidth = this.sideBoxWidth / 2;
         const halfSideBoxHeight = this.sideBoxHeight / 2;
         // Calculate the four corners of the extra box relative to its center
@@ -462,9 +462,9 @@ export class CanvasItem {
         selectedItemSide: 'left' | 'right' | 'top' | 'bottom',
         secondItemSide: 'left' | 'right' | 'top' | 'bottom'
     ): boolean {
-        const selectedItemBox = this.getRotatedSideBoxBoundingBox(selectedItemSide);
+        const selectedItemBox = this.getRotatedSideBoxBoundingArea(selectedItemSide);
         // console.log(selectedItemBox);
-        const secondItemBox = secondItem.getRotatedSideBoxBoundingBox(secondItemSide);
+        const secondItemBox = secondItem.getRotatedSideBoxBoundingArea(secondItemSide);
         // console.log(secondItemBox);
 
         return !(
@@ -565,50 +565,135 @@ export class CanvasItem {
 
         return { status: false, connectionSide: '' };
     }
+    /** Returns center based on stored x,y and unrotated width/height */
+    getCenter() {
+        const w = this.image.width;
+        const h = this.image.height;
+        return { cx: this.x + w / 2, cy: this.y + h / 2 };
+    }
+
+    getAABB() {
+        const w = this.image.width;
+        const h = this.image.height;
+        const { cx, cy } = this.getCenter();
+
+        const rad = (this.rotateAngle % 360) * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        // rectangle corners relative to center (before rotation)
+        const rel = [
+            { rx: -w / 2, ry: -h / 2 },
+            { rx: w / 2, ry: -h / 2 },
+            { rx: w / 2, ry: h / 2 },
+            { rx: -w / 2, ry: h / 2 },
+        ];
+
+        const rotated = rel.map(({ rx, ry }) => {
+            const xRot = rx * cos - ry * sin;
+            const yRot = rx * sin + ry * cos;
+            return { x: cx + xRot, y: cy + yRot };
+        });
+
+        const xs = rotated.map(p => p.x);
+        const ys = rotated.map(p => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        return {
+            minX, minY, maxX, maxY,
+            width: maxX - minX,
+            height: maxY - minY,
+            centerX: cx, // same as cx
+            centerY: cy,
+        };
+    }
 
     mergeConnectedItems(secondItem: CanvasItem): void {
-        const selectedItemAdjustedSide = this.getItemAdjustedConnectionSide();
-        const secondItemBoxAdjustedSide = secondItem.getItemAdjustedConnectionSide() !== 'both'
-            ? secondItem.getItemAdjustedConnectionSide() : selectedItemAdjustedSide === 'left' ? 'right' : 'left';
+        const selectedSide = this.getItemAdjustedConnectionSide();
+        const secondSide = secondItem.getItemAdjustedConnectionSide() !== 'both'
+            ? secondItem.getItemAdjustedConnectionSide()
+            : (selectedSide === 'left' ? 'right' : 'left');
 
-        // Calculate the center of both items
-        const secondItemCenterX = secondItem.x + secondItem.image.width / 2;
-        const secondItemCenterY = secondItem.y + secondItem.image.height / 2;
+        const a = this.getAABB();         // this item AABB (before move)
+        const b = secondItem.getAABB();   // second item AABB
 
-        if (selectedItemAdjustedSide === 'right' && secondItemBoxAdjustedSide === 'left') {
-            // Align this item's right side with the other item's left side
-            this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
-            this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
-        } else if (selectedItemAdjustedSide === 'left' && secondItemBoxAdjustedSide === 'right') {
-            // Align this item's left side with the other item's right side
-            this.x = secondItemCenterX + secondItem.image.width / 2;
-            this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
-        } else if (selectedItemAdjustedSide === 'top' && secondItemBoxAdjustedSide === 'bottom') {
-            // Align this item's top side with the other item's bottom side
-            this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = secondItem.y + this.image.width - 10;
-        } else if (selectedItemAdjustedSide === 'bottom' && secondItemBoxAdjustedSide === 'top') {
-            // Align this item's bottom side with the other item's top side
-            console.log(this.image.width, secondItem.image.width)
-            this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
-            this.y = secondItem.y - secondItem.image.width + 10;
-        } else if (selectedItemAdjustedSide === 'both') {
-            if (secondItemBoxAdjustedSide === 'left') {
-                this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
-                this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
-            } else if (secondItemBoxAdjustedSide === 'right') {
-                this.x = secondItemCenterX + secondItem.image.width / 2;
-                this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
-            }
-            if (secondItemBoxAdjustedSide === 'top') {
-                this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
-                this.y = secondItemCenterY - (this.image.width + secondItem.image.width / 2);
-            } else if (secondItemBoxAdjustedSide === 'bottom') {
-                this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
-                this.y = secondItemCenterY + secondItem.image.height / 2;
-            }
+        // We'll move this.x / this.y by computed deltas
+        let dx = 0, dy = 0;
+
+        if (selectedSide === 'bottom' && secondSide === 'top') {
+            // Put this ABOVE second: this.AABB.maxY === second.AABB.minY
+            dy = b.minY - a.maxY;
+            // horizontally center by centers (center is rotation pivot)
+            dx = b.centerX - a.centerX;
+        } else if (selectedSide === 'top' && secondSide === 'bottom') {
+            // Put this BELOW second: this.AABB.minY === second.AABB.maxY
+            dy = b.maxY - a.minY;
+            dx = b.centerX - a.centerX;
+        } else if (selectedSide === 'right' && secondSide === 'left') {
+            // Put this LEFT of second: this.AABB.maxX === second.AABB.minX
+            dx = b.minX - a.maxX;
+            dy = b.centerY - a.centerY;
+        } else if (selectedSide === 'left' && secondSide === 'right') {
+            // Put this RIGHT of second: this.AABB.minX === second.AABB.maxX
+            dx = b.maxX - a.minX;
+            dy = b.centerY - a.centerY;
+        } else if (selectedSide === 'both') {
+            // fall-back strategy: attach below (or you can choose another policy)
+            dy = b.maxY - a.minY; // place below
+            dx = b.centerX - a.centerX;
         }
+
+        // apply move to top-left coordinates (this shifts the rotation center too)
+        this.x += dx;
+        this.y += dy;
     }
+
+
+    // mergeConnectedItems(secondItem: CanvasItem): void {
+    //     const selectedItemAdjustedSide = this.getItemAdjustedConnectionSide();
+    //     const secondItemBoxAdjustedSide = secondItem.getItemAdjustedConnectionSide() !== 'both'
+    //         ? secondItem.getItemAdjustedConnectionSide() : selectedItemAdjustedSide === 'left' ? 'right' : 'left';
+
+    //     // Calculate the center of both items
+    //     const secondItemCenterX = secondItem.x + secondItem.image.width / 2;
+    //     const secondItemCenterY = secondItem.y + secondItem.image.height / 2;
+
+    //     if (selectedItemAdjustedSide === 'right' && secondItemBoxAdjustedSide === 'left') {
+    //         // Align this item's right side with the other item's left side
+    //         this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
+    //         this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+    //     } else if (selectedItemAdjustedSide === 'left' && secondItemBoxAdjustedSide === 'right') {
+    //         // Align this item's left side with the other item's right side
+    //         this.x = secondItemCenterX + secondItem.image.width / 2;
+    //         this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+    //     } else if (selectedItemAdjustedSide === 'top' && secondItemBoxAdjustedSide === 'bottom') {
+    //         // Align this item's top side with the other item's bottom side
+    //         this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+    //         this.y = secondItem.y;
+    //     } else if (selectedItemAdjustedSide === 'bottom' && secondItemBoxAdjustedSide === 'top') {
+    //         // Align this item's bottom side with the other item's top side
+    //         this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+    //         this.y = secondItemCenterY - secondItem.image.height - this.image.height; // Align bottom to top
+    //     } else if (selectedItemAdjustedSide === 'both') {
+    //         if (secondItemBoxAdjustedSide === 'left') {
+    //             this.x = secondItemCenterX - (this.image.width + secondItem.image.width / 2);
+    //             this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+    //         } else if (secondItemBoxAdjustedSide === 'right') {
+    //             this.x = secondItemCenterX + secondItem.image.width / 2;
+    //             this.y = secondItemCenterY - this.image.height / 2; // Vertically align centers
+    //         }
+    //         if (secondItemBoxAdjustedSide === 'top') {
+    //             this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+    //             this.y = secondItemCenterY - (this.image.width + secondItem.image.width / 2);
+    //         } else if (secondItemBoxAdjustedSide === 'bottom') {
+    //             this.x = secondItemCenterX - this.image.width / 2; // Horizontally align centers
+    //             this.y = secondItemCenterY + secondItem.image.height / 2;
+    //         }
+    //     }
+    // }
 
 }
 
